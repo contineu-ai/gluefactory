@@ -1,0 +1,66 @@
+# --- Dataset Configuration ---
+data:
+  name: spherecraft                     # Must match the key in datasets/__init__.py
+  data_dir: 'spherecraft_data/'        # Relative to DATA_PATH, e.g., DATA_PATH / 'spherecraft_data' / scene_name
+  scene_name: 'seoul'                  # MANDATORY: The specific SphereCraft scene to use
+  keypoints_detector: 'superpoint'     # Subdirectory name in SphereCraft's keypoints/ and for prefixing list files
+
+  # Suffixes for list files (will be prefixed with keypoints_detector)
+  # e.g., superpoint_train.txt, superpoint_val.txt
+  train_list_suffix: 'train.txt'
+  val_list_suffix: 'val.txt'
+  # test_list_suffix: 'test.txt' # For evaluation
+
+  grayscale: True                      # Convert images to grayscale
+  image_native_width: 2048             # For spherical_to_pixel conversion
+  image_native_height: 1024            # For spherical_to_pixel conversion
+
+  # ImagePreprocessor configuration (applied after loading native image)
+  preprocessing:
+    resize: null                    # Resize images so their max dimension is 512px
+    # resize_force: false              # Default, maintains aspect ratio
+    # dfactor: 8                        # Ensure final image dimensions are divisible by 8 (e.g., for SuperPoint)
+
+  # --- Dataloader Configuration (inherited from BaseDataset defaults if not specified) ---
+  # train_batch_size: 4                # Example, adjust based on GPU memory
+  # val_batch_size: 4                  # Example
+  batch_size: 4                        # Fallback if train/val_batch_size not set, also for test
+  num_workers: 2                       # Number of CPU workers for data loading
+  # shuffle_training: true             # Default from BaseDataset
+  # seed: 0                            # Default from BaseDataset for worker_init_fn
+  # prefetch_factor: 2                 # Default from BaseDataset
+
+# --- Model Configuration ---
+model:
+  name: lightglue                      # Tells the training script to build a LightGlue model
+  features: null                       # CRITICAL: Indicates features are pre-loaded by the dataset
+  matcher:
+    _target_: gluefactory.models.matchers.lightglue.LightGlue # Path to LightGlue class
+    n_layers: 9
+    num_heads: 4
+    flash: true                        # Set to false if PyTorch < 2.0 or no FlashAttention installed
+    filter_threshold: 0.1              # Example: confidence threshold for filtering matches post-attention
+    # depth_confidence: -1             # Default, LightGlue specific, -1 means not used
+    # width_confidence: -1             # Default, LightGlue specific, -1 means not used
+    # Add any other LightGlue-specific parameters from its constructor or official configs
+
+# --- Training Configuration ---
+train:
+  epochs: 50
+  lr: 0.0001
+  weight_decay: 0.0                    # Optimizer weight decay
+  log_every_iter: 100                  # Log training stats every N iterations
+  eval_every_epoch: true               # Run evaluation on 'val' split after each epoch (if val_list_suffix is provided)
+  # load_experiment: null              # For training from scratch. Set to experiment name to fine-tune.
+  # compile: 'inductor'                # For PyTorch 2.0+ speedup (optional)
+
+  # Optimizer and scheduler can often be left to defaults in the training script,
+  # or specified here if needed:
+  # optimizer:
+  #   name: adam
+  #   lr: ${train.lr} # Reference lr from above
+  #   weight_decay: ${train.weight_decay}
+  # scheduler:
+  #   name: ReduceLROnPlateau
+  #   factor: 0.5
+  #   patience: 5

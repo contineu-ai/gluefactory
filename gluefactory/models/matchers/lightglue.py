@@ -19,19 +19,55 @@ torch.backends.cudnn.deterministic = True
 
 
 @torch.cuda.amp.custom_fwd(cast_inputs=torch.float32)
-def normalize_keypoints(
-    kpts: torch.Tensor, size: Optional[torch.Tensor] = None
+def normalize_keypoints_spherical(
+    kpts: torch.Tensor,
+    # The 'size' parameter is no longer needed for spherical normalization,
 ) -> torch.Tensor:
-    if size is None:
-        size = 1 + kpts.max(-2).values - kpts.min(-2).values
-    elif not isinstance(size, torch.Tensor):
-        size = torch.tensor(size, device=kpts.device, dtype=kpts.dtype)
-    size = size.to(kpts)
-    shift = size / 2
-    scale = size.max(-1).values / 2
-    kpts = (kpts - shift[..., None, :]) / scale[..., None, None]
-    return kpts
+    """
+    Normalizes a batch of keypoints in spherical coordinates (phi, theta)
+    to the range [-1, 1] for each component.
 
+    Args:
+        kpts (torch.Tensor): A tensor of shape [B, N, 2] where the last
+                             dimension contains (phi, theta).
+                             - phi is assumed to be in the range [-pi, pi].
+                             - theta is assumed to be in the range [-pi/2, pi/2].
+    Returns:
+        torch.Tensor: The normalized keypoints in the same shape.
+    """
+    if kpts.shape[-1] != 2:
+        raise ValueError(
+            "Keypoints tensor must have a last dimension of size 2 for (phi, theta)."
+        )
+
+    # We create tensors for the ranges and shifts on the correct device and dtype.
+    # phi_range = 2 * pi, theta_range = pi
+    # We can use the actual values of pi for precision.
+    pi = torch.tensor(torch.pi, device=kpts.device, dtype=kpts.dtype)
+
+    # Unpack phi and theta for clarity
+    phi, theta = kpts.unbind(dim=-1)
+
+    # --- Normalize phi from [-pi, pi] to [-1, 1] ---
+    # The formula to map [min, max] to [-1, 1] is: 2 * (x - min) / (max - min) - 1
+    # For phi, min = -pi, max = pi. Range = 2*pi.
+    # Formula becomes: 2 * (phi - (-pi)) / (2*pi) - 1  =  (phi + pi) / pi - 1  =  phi / pi
+    norm_phi = phi / pi
+
+    # --- Normalize theta from [-pi/2, pi/2] to [-1, 1] ---
+    # For theta, min = -pi/2, max = pi/2. Range = pi.
+    # Formula becomes: 2 * (theta - (-pi/2)) / pi - 1 = 2 * (theta + pi/2) / pi - 1 = 2*theta/pi + 1 - 1 = 2*theta/pi
+    norm_theta = 2 * theta / pi
+
+    # Stack them back together
+    normalized_kpts = torch.stack([norm_phi, norm_theta], dim=-1)
+
+    # Optional: Add a check to ensure values are within the expected range,
+    # which can be useful for debugging.
+    assert normalized_kpts.min() >= -1.0 and normalized_kpts.max() <= 1.0, \
+        "Normalized values are out of the [-1, 1] range. Check input ranges."
+
+    return normalized_kpts
 
 def rotate_half(x: torch.Tensor) -> torch.Tensor:
     x = x.unflatten(-1, (-1, 2))
@@ -306,12 +342,12 @@ def filter_matches(scores: torch.Tensor, th: float):
 class LightGlue(nn.Module):
     default_conf = {
         "name": "lightglue",  # just for interfacing
-        "input_dim": 256,  # input descriptor dimension (autoselected from weights)
+        "input_dim": 64,  # input descriptor dimension (autoselected from weights)
         "add_scale_ori": False,
         "descriptor_dim": 256,
         "n_layers": 9,
         "num_heads": 4,
-        "flash": False,  # enable FlashAttention if available.
+        "flash": True,  # enable FlashAttention if available.
         "mp": False,  # enable mixed precision
         "depth_confidence": -1,  # early stopping, disable with -1
         "width_confidence": -1,  # point pruning, disable with -1
@@ -403,12 +439,17 @@ class LightGlue(nn.Module):
         kpts0, kpts1 = data["keypoints0"], data["keypoints1"]
         b, m, _ = kpts0.shape
         b, n, _ = kpts1.shape
+        
+        assert m == n, f"Number of keypoints in both views must be equal, got {m} and {n}."
+        
         device = kpts0.device
-        if "view0" in data.keys() and "view1" in data.keys():
-            size0 = data["view0"].get("image_size")
-            size1 = data["view1"].get("image_size")
-        kpts0 = normalize_keypoints(kpts0, size0).clone()
-        kpts1 = normalize_keypoints(kpts1, size1).clone()
+
+        # if "view0" in data.keys() and "view1" in data.keys():
+        #     size0 = data["view0"].get("image_size")
+        #     size1 = data["view1"].get("image_size")
+
+        kpts0 = normalize_keypoints_spherical(kpts0).clone()
+        kpts1 = normalize_keypoints_spherical(kpts1).clone()
 
         if self.conf.add_scale_ori:
             sc0, o0 = data["scales0"], data["oris0"]
@@ -435,6 +476,7 @@ class LightGlue(nn.Module):
 
         assert desc0.shape[-1] == self.conf.input_dim
         assert desc1.shape[-1] == self.conf.input_dim
+               
         if torch.is_autocast_enabled():
             desc0 = desc0.half()
             desc1 = desc1.half()

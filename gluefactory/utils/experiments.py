@@ -45,9 +45,15 @@ def get_last_checkpoint(exper, allow_interrupted=True):
 
 def get_best_checkpoint(exper):
     """Get the checkpoint with the best loss, for a given experiment name."""
-    p = Path(TRAINING_PATH, exper, "checkpoint_best.tar")
-    return p
-
+    p_tar = Path(TRAINING_PATH, exper, "checkpoint_best.tar")
+    p_pth = Path(TRAINING_PATH, exper, "checkpoint_best.pth")
+    if p_tar.exists():
+        return p_tar
+    elif p_pth.exists():
+        return p_pth
+    else:
+        logger.warning(f"No best checkpoint found for {exper}.")
+        return None
 
 def delete_old_checkpoints(dir_, num_keep):
     """Delete all but the num_keep last saved checkpoints."""

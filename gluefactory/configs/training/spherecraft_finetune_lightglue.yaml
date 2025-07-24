@@ -1,0 +1,59 @@
+# @package _global_
+
+# This configuration is for FINE-TUNING LightGlue on the SphereCraft dataset.
+
+train:
+  epochs: 10 # Fewer epochs are often needed for fine-tuning
+  lr: 0.05 # Use a smaller learning rate for fine-tuning
+  optimizer: 'adamw'
+  log_every_iter: 100
+  eval_every_iter: 1000
+  save_every_iter: 1000
+  best_key: 'loss/total'
+  lr_schedule:
+    type: 'exp'
+    exp_div_10: 5 # Decay the learning rate more slowly
+    start: 0
+  seed: 42
+  keep_last_checkpoints: 5
+  
+  # --- KEY CHANGE FOR FINE-TUNING ---
+  # Specify the experiment whose weights we want to load.
+  # If it's a file path and not an experiment name, we'll handle it in the command.
+  # For now, we point to the model we will use.
+  # load_experiment: "lightglue_superpoint"
+
+  # Ensure the dataset module is discoverable
+  submodules: ['gluefactory.datasets.spherecraft']
+
+# --- KEY CHANGE: Define the model as LightGlue ---
+model:
+  name: lightglue
+  features: 'superpoint' # Must match the features the model was trained on
+  # You can add other LightGlue-specific parameters here if needed
+  # e.g., depth_confidence, width_confidence
+
+# Define the dataset (this section remains the same)
+data:
+  name: spherecraft
+  
+  # --- SphereCraft-specific parameters ---
+  scene_name: 'seoul'
+  data_root: 'data/spherecraft_data'
+  keypoints_detector: 'superpoint'
+
+  train_list_suffix: 'train.txt'
+  val_list_suffix: 'val.txt'
+  
+  image_native_width: 2048
+  image_native_height: 1024
+
+  # Preprocessing settings
+  grayscale: true
+  preprocessing:
+    resize: null
+  
+  # Batch sizes and workers
+  train_batch_size: 4
+  val_batch_size: 4
+  num_workers: 8

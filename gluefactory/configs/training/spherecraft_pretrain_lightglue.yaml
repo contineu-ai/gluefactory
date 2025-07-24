@@ -1,0 +1,48 @@
+# @package _global_
+
+# This configuration is for FINE-TUNING LightGlue on the SphereCraft dataset.
+
+train:
+  epochs: 40 # Reduced epochs for pretraining
+  lr: 0.0001 # Use a smaller learning rate for pretraining
+  optimizer: 'adamw'
+  log_every_iter: 100
+  eval_every_iter: 1000
+  save_every_iter: 1000
+  best_key: 'loss/total'
+  lr_schedule:
+    # Use the standard PyTorch MultiStepLR scheduler
+    type: 'MultiStepLR'
+    # CRITICAL: This ensures the scheduler steps at the end of each epoch
+    on_epoch: True
+    # 'options' are passed directly to the MultiStepLR constructor
+    options:
+      # A list of epochs at which to multiply the LR by gamma.
+      # This decays the LR at epoch 20, 21, 22, ..., up to 39.
+      milestones: [20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39]
+      # The multiplicative factor for the learning rate decay.
+      gamma: 0.8
+  seed: 42
+  keep_last_checkpoints: 5
+
+  # Ensure the dataset module is discoverable
+  submodules: ['gluefactory.datasets.spherecraft_pretraining']
+
+# --- KEY CHANGE: Define the model as LightGlue ---
+model:
+  name: lightglue
+  features: 'xfeat' # Must match the features the model was trained on
+  # You can add other LightGlue-specific parameters here if needed
+  # e.g., depth_confidence, width_confidence
+
+# Define the dataset (this section remains the same)
+data:
+  name: spherecraft_pretraining
+  
+  # --- SphereCraft-specific parameters ---
+  data_dir: 'pretraining'
+  keypoints_detector: 'xfeat'
+  
+  # Batch sizes and workers
+  train_batch_size: 4
+  num_workers: 8

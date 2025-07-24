@@ -15,6 +15,7 @@ from torch.utils.data._utils.collate import (
     default_collate_err_msg_format,
     np_str_obj_array_pattern,
 )
+from torch.nn.utils.rnn import pad_sequence
 
 from ..utils.tensor import string_classes
 from ..utils.tools import set_num_threads, set_seed
@@ -51,15 +52,27 @@ def collate(batch):
     elem = batch[0]
     elem_type = type(elem)
     if isinstance(elem, torch.Tensor):
-        if torch.utils.data.get_worker_info() is not None:
-            # If we're in a background process, concatenate directly into a
-            # shared memory tensor to avoid an extra copy
-            numel = sum([x.numel() for x in batch])
-            try:
-                storage = elem.untyped_storage()._new_shared(numel)  # noqa: F841
-            except AttributeError:
-                storage = elem.storage()._new_shared(numel)  # noqa: F841
-        return torch.stack(batch, dim=0)
+        # Check if all tensors in the batch have the same shape
+        all_same_shape = all(x.shape == elem.shape for x in batch)
+
+        if all_same_shape:
+            # If all shapes are the same, stack them efficiently.
+            # This is the original behavior, good for images, etc.
+            if torch.utils.data.get_worker_info() is not None:
+                # If we're in a background process, concatenate directly into a
+                # shared memory tensor to avoid an extra copy
+                numel = sum([x.numel() for x in batch])
+                try:
+                    storage = elem.untyped_storage()._new_shared(numel)  # noqa: F841
+                except AttributeError:
+                    storage = elem.storage()._new_shared(numel)  # noqa: F841
+            return torch.stack(batch, dim=0)
+        else:
+            # If shapes are different, pad them to the max length in the batch.
+            # This is ideal for variable-length keypoints, descriptors, etc.
+            # `batch_first=True` makes the output [B, T, *], which is standard.
+            # `padding_value=0` is a common default.
+            return pad_sequence(batch, batch_first=True, padding_value=0, padding_side="right")
     elif (
         elem_type.__module__ == "numpy"
         and elem_type.__name__ != "str_"

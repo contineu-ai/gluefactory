@@ -1,0 +1,580 @@
+Metadata-Version: 2.4
+Name: gluefactory
+Version: 0.0
+Summary: Training and evaluation of local feature extraction and matching
+Author: Philipp Lindenberger, Paul-Edouard Sarlin, Rémi Pautrat, Iago Suárez
+License:                                  Apache License
+                                   Version 2.0, January 2004
+                                http://www.apache.org/licenses/
+        
+           TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+        
+           1. Definitions.
+        
+              "License" shall mean the terms and conditions for use, reproduction,
+              and distribution as defined by Sections 1 through 9 of this document.
+        
+              "Licensor" shall mean the copyright owner or entity authorized by
+              the copyright owner that is granting the License.
+        
+              "Legal Entity" shall mean the union of the acting entity and all
+              other entities that control, are controlled by, or are under common
+              control with that entity. For the purposes of this definition,
+              "control" means (i) the power, direct or indirect, to cause the
+              direction or management of such entity, whether by contract or
+              otherwise, or (ii) ownership of fifty percent (50%) or more of the
+              outstanding shares, or (iii) beneficial ownership of such entity.
+        
+              "You" (or "Your") shall mean an individual or Legal Entity
+              exercising permissions granted by this License.
+        
+              "Source" form shall mean the preferred form for making modifications,
+              including but not limited to software source code, documentation
+              source, and configuration files.
+        
+              "Object" form shall mean any form resulting from mechanical
+              transformation or translation of a Source form, including but
+              not limited to compiled object code, generated documentation,
+              and conversions to other media types.
+        
+              "Work" shall mean the work of authorship, whether in Source or
+              Object form, made available under the License, as indicated by a
+              copyright notice that is included in or attached to the work
+              (an example is provided in the Appendix below).
+        
+              "Derivative Works" shall mean any work, whether in Source or Object
+              form, that is based on (or derived from) the Work and for which the
+              editorial revisions, annotations, elaborations, or other modifications
+              represent, as a whole, an original work of authorship. For the purposes
+              of this License, Derivative Works shall not include works that remain
+              separable from, or merely link (or bind by name) to the interfaces of,
+              the Work and Derivative Works thereof.
+        
+              "Contribution" shall mean any work of authorship, including
+              the original version of the Work and any modifications or additions
+              to that Work or Derivative Works thereof, that is intentionally
+              submitted to Licensor for inclusion in the Work by the copyright owner
+              or by an individual or Legal Entity authorized to submit on behalf of
+              the copyright owner. For the purposes of this definition, "submitted"
+              means any form of electronic, verbal, or written communication sent
+              to the Licensor or its representatives, including but not limited to
+              communication on electronic mailing lists, source code control systems,
+              and issue tracking systems that are managed by, or on behalf of, the
+              Licensor for the purpose of discussing and improving the Work, but
+              excluding communication that is conspicuously marked or otherwise
+              designated in writing by the copyright owner as "Not a Contribution."
+        
+              "Contributor" shall mean Licensor and any individual or Legal Entity
+              on behalf of whom a Contribution has been received by Licensor and
+              subsequently incorporated within the Work.
+        
+           2. Grant of Copyright License. Subject to the terms and conditions of
+              this License, each Contributor hereby grants to You a perpetual,
+              worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+              copyright license to reproduce, prepare Derivative Works of,
+              publicly display, publicly perform, sublicense, and distribute the
+              Work and such Derivative Works in Source or Object form.
+        
+           3. Grant of Patent License. Subject to the terms and conditions of
+              this License, each Contributor hereby grants to You a perpetual,
+              worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+              (except as stated in this section) patent license to make, have made,
+              use, offer to sell, sell, import, and otherwise transfer the Work,
+              where such license applies only to those patent claims licensable
+              by such Contributor that are necessarily infringed by their
+              Contribution(s) alone or by combination of their Contribution(s)
+              with the Work to which such Contribution(s) was submitted. If You
+              institute patent litigation against any entity (including a
+              cross-claim or counterclaim in a lawsuit) alleging that the Work
+              or a Contribution incorporated within the Work constitutes direct
+              or contributory patent infringement, then any patent licenses
+              granted to You under this License for that Work shall terminate
+              as of the date such litigation is filed.
+        
+           4. Redistribution. You may reproduce and distribute copies of the
+              Work or Derivative Works thereof in any medium, with or without
+              modifications, and in Source or Object form, provided that You
+              meet the following conditions:
+        
+              (a) You must give any other recipients of the Work or
+                  Derivative Works a copy of this License; and
+        
+              (b) You must cause any modified files to carry prominent notices
+                  stating that You changed the files; and
+        
+              (c) You must retain, in the Source form of any Derivative Works
+                  that You distribute, all copyright, patent, trademark, and
+                  attribution notices from the Source form of the Work,
+                  excluding those notices that do not pertain to any part of
+                  the Derivative Works; and
+        
+              (d) If the Work includes a "NOTICE" text file as part of its
+                  distribution, then any Derivative Works that You distribute must
+                  include a readable copy of the attribution notices contained
+                  within such NOTICE file, excluding those notices that do not
+                  pertain to any part of the Derivative Works, in at least one
+                  of the following places: within a NOTICE text file distributed
+                  as part of the Derivative Works; within the Source form or
+                  documentation, if provided along with the Derivative Works; or,
+                  within a display generated by the Derivative Works, if and
+                  wherever such third-party notices normally appear. The contents
+                  of the NOTICE file are for informational purposes only and
+                  do not modify the License. You may add Your own attribution
+                  notices within Derivative Works that You distribute, alongside
+                  or as an addendum to the NOTICE text from the Work, provided
+                  that such additional attribution notices cannot be construed
+                  as modifying the License.
+        
+              You may add Your own copyright statement to Your modifications and
+              may provide additional or different license terms and conditions
+              for use, reproduction, or distribution of Your modifications, or
+              for any such Derivative Works as a whole, provided Your use,
+              reproduction, and distribution of the Work otherwise complies with
+              the conditions stated in this License.
+        
+           5. Submission of Contributions. Unless You explicitly state otherwise,
+              any Contribution intentionally submitted for inclusion in the Work
+              by You to the Licensor shall be under the terms and conditions of
+              this License, without any additional terms or conditions.
+              Notwithstanding the above, nothing herein shall supersede or modify
+              the terms of any separate license agreement you may have executed
+              with Licensor regarding such Contributions.
+        
+           6. Trademarks. This License does not grant permission to use the trade
+              names, trademarks, service marks, or product names of the Licensor,
+              except as required for reasonable and customary use in describing the
+              origin of the Work and reproducing the content of the NOTICE file.
+        
+           7. Disclaimer of Warranty. Unless required by applicable law or
+              agreed to in writing, Licensor provides the Work (and each
+              Contributor provides its Contributions) on an "AS IS" BASIS,
+              WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+              implied, including, without limitation, any warranties or conditions
+              of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+              PARTICULAR PURPOSE. You are solely responsible for determining the
+              appropriateness of using or redistributing the Work and assume any
+              risks associated with Your exercise of permissions under this License.
+        
+           8. Limitation of Liability. In no event and under no legal theory,
+              whether in tort (including negligence), contract, or otherwise,
+              unless required by applicable law (such as deliberate and grossly
+              negligent acts) or agreed to in writing, shall any Contributor be
+              liable to You for damages, including any direct, indirect, special,
+              incidental, or consequential damages of any character arising as a
+              result of this License or out of the use or inability to use the
+              Work (including but not limited to damages for loss of goodwill,
+              work stoppage, computer failure or malfunction, or any and all
+              other commercial damages or losses), even if such Contributor
+              has been advised of the possibility of such damages.
+        
+           9. Accepting Warranty or Additional Liability. While redistributing
+              the Work or Derivative Works thereof, You may choose to offer,
+              and charge a fee for, acceptance of support, warranty, indemnity,
+              or other liability obligations and/or rights consistent with this
+              License. However, in accepting such obligations, You may act only
+              on Your own behalf and on Your sole responsibility, not on behalf
+              of any other Contributor, and only if You agree to indemnify,
+              defend, and hold each Contributor harmless for any liability
+              incurred by, or claims asserted against, such Contributor by reason
+              of your accepting any such warranty or additional liability.
+        
+           END OF TERMS AND CONDITIONS
+        
+           APPENDIX: How to apply the Apache License to your work.
+        
+              To apply the Apache License to your work, attach the following
+              boilerplate notice, with the fields enclosed by brackets "[]"
+              replaced with your own identifying information. (Don't include
+              the brackets!)  The text should be enclosed in the appropriate
+              comment syntax for the file format. We also recommend that a
+              file or class name and description of purpose be included on the
+              same "printed page" as the copyright notice for easier
+              identification within third-party archives.
+        
+           Copyright [yyyy] [name of copyright owner]
+        
+           Licensed under the Apache License, Version 2.0 (the "License");
+           you may not use this file except in compliance with the License.
+           You may obtain a copy of the License at
+        
+               http://www.apache.org/licenses/LICENSE-2.0
+        
+           Unless required by applicable law or agreed to in writing, software
+           distributed under the License is distributed on an "AS IS" BASIS,
+           WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+           See the License for the specific language governing permissions and
+           limitations under the License.
+        
+Project-URL: Repository, https://github.com/cvg/glue-factory
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: torch>=1.7
+Requires-Dist: torchvision>=0.8
+Requires-Dist: numpy
+Requires-Dist: opencv-python
+Requires-Dist: tqdm
+Requires-Dist: matplotlib
+Requires-Dist: scipy
+Requires-Dist: h5py
+Requires-Dist: omegaconf
+Requires-Dist: tensorboard
+Requires-Dist: albumentations
+Requires-Dist: kornia
+Requires-Dist: seaborn
+Requires-Dist: joblib
+Requires-Dist: lightglue@ git+https://github.com/cvg/LightGlue.git
+Provides-Extra: extra
+Requires-Dist: pycolmap; extra == "extra"
+Requires-Dist: poselib@ git+https://github.com/PoseLib/PoseLib.git@9c8f3ca1baba69e19726cc7caded574873ec1f9e ; extra == "extra"
+Requires-Dist: pytlsd@ git+https://github.com/iago-suarez/pytlsd.git@v0.0.5 ; extra == "extra"
+Requires-Dist: deeplsd@ git+https://github.com/cvg/DeepLSD.git ; extra == "extra"
+Requires-Dist: homography_est@ git+https://github.com/rpautrat/homography_est.git@17b200d528e6aa8ac61a878a29265bf5f9d36c41 ; extra == "extra"
+Provides-Extra: dev
+Requires-Dist: black; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Requires-Dist: isort; extra == "dev"
+Requires-Dist: parameterized; extra == "dev"
+Dynamic: license-file
+
+# Glue Factory
+Glue Factory is CVG's library for training and evaluating deep neural network that extract and match local visual feature. It enables you to:
+- Reproduce the training of state-of-the-art models for point and line matching, like [LightGlue](https://github.com/cvg/LightGlue) and [GlueStick](https://github.com/cvg/GlueStick) (ICCV 2023)
+- Train these models on multiple datasets using your own local features or lines
+- Evaluate feature extractors or matchers on standard benchmarks like HPatches or MegaDepth-1500
+
+<p align="center">
+  <a href="https://github.com/cvg/LightGlue"><img src="docs/lightglue_matches.svg" width="60%"/></a>
+  <a href="https://github.com/cvg/GlueStick"><img src="docs/gluestick_img.svg" width="60%"/></a>
+  <br /><em>Point and line matching with LightGlue and GlueStick.</em>
+</p>
+
+## Installation
+Glue Factory runs with Python 3 and [PyTorch](https://pytorch.org/). The following installs the library and its basic dependencies:
+```bash
+git clone https://github.com/cvg/glue-factory
+cd glue-factory
+python3 -m pip install -e .  # editable mode
+```
+Some advanced features might require installing the full set of dependencies:
+```bash
+python3 -m pip install -e .[extra]
+```
+
+All models and datasets in gluefactory have auto-downloaders, so you can get started right away!
+
+## License
+The code and trained models in Glue Factory are released with an Apache-2.0 license. This includes LightGlue and an [open version of SuperPoint](https://github.com/rpautrat/SuperPoint). Third-party models that are not compatible with this license, such as SuperPoint (original) and SuperGlue, are provided in `gluefactory_nonfree`, where each model might follow its own, restrictive license.
+
+## Evaluation
+
+#### HPatches
+Running the evaluation commands automatically downloads the dataset, by default to the directory `data/`. You will need about 1.8 GB of free disk space.
+
+<details>
+<summary>[Evaluating LightGlue]</summary>
+
+To evaluate the pre-trained SuperPoint+LightGlue model on HPatches, run:
+```bash
+python -m gluefactory.eval.hpatches --conf superpoint+lightglue-official --overwrite
+```
+You should expect the following results
+```
+{'H_error_dlt@1px': 0.3515,
+ 'H_error_dlt@3px': 0.6723,
+ 'H_error_dlt@5px': 0.7756,
+ 'H_error_ransac@1px': 0.3428,
+ 'H_error_ransac@3px': 0.5763,
+ 'H_error_ransac@5px': 0.6943,
+ 'mnum_keypoints': 1024.0,
+ 'mnum_matches': 560.756,
+ 'mprec@1px': 0.337,
+ 'mprec@3px': 0.89,
+ 'mransac_inl': 130.081,
+ 'mransac_inl%': 0.217,
+ 'ransac_mAA': 0.5378}
+```
+
+The default robust estimator is `opencv`, but we strongly recommend to use `poselib` instead:
+```bash
+python -m gluefactory.eval.hpatches --conf superpoint+lightglue-official --overwrite \
+    eval.estimator=poselib eval.ransac_th=-1
+```
+Setting `eval.ransac_th=-1` auto-tunes the RANSAC inlier threshold by running the evaluation with a range of thresholds and reports results for the optimal value.
+Here are the results as Area Under the Curve (AUC) of the homography error at  1/3/5 pixels:
+
+| Methods                                                      | DLT         | [OpenCV](../gluefactory/robust_estimators/homography/opencv.py)       | [PoseLib](../gluefactory/robust_estimators/homography/poselib.py)      |
+| ------------------------------------------------------------ | ------------------ | ------------------ | ------------------ |
+| [SuperPoint + SuperGlue](gluefactory/configs/superpoint+superglue-official.yaml) | 32.1 / 65.0 / 75.7 | 32.9 / 55.7 / 68.0 | 37.0 / 68.2 / 78.7 |
+| [SuperPoint + LightGlue](gluefactory/configs/superpoint+lightglue-official.yaml) | 35.1 / 67.2 / 77.6 | 34.2 / 57.9 / 69.9 | 37.1 / 67.4 / 77.8 |
+
+
+</details>
+
+<details>
+<summary>[Evaluating GlueStick]</summary>
+
+To evaluate GlueStick on HPatches, run:
+```bash
+python -m gluefactory.eval.hpatches --conf gluefactory/configs/superpoint+lsd+gluestick.yaml --overwrite
+```
+You should expect the following results
+```
+{"mprec@1px": 0.245,
+ "mprec@3px": 0.838,
+ "mnum_matches": 1290.5,
+ "mnum_keypoints": 2287.5,
+ "mH_error_dlt": null,
+ "H_error_dlt@1px": 0.3355,
+ "H_error_dlt@3px": 0.6637,
+ "H_error_dlt@5px": 0.7713,
+ "H_error_ransac@1px": 0.3915,
+ "H_error_ransac@3px": 0.6972,
+ "H_error_ransac@5px": 0.7955,
+ "H_error_ransac_mAA": 0.62806,
+ "mH_error_ransac": null}
+```
+
+Since we use points and lines to solve for the homography, we use a different robust estimator here: [Hest](https://github.com/rpautrat/homography_est/). Here are the results as Area Under the Curve (AUC) of the homography error at  1/3/5 pixels:
+
+| Methods                                                      | DLT         | [Hest](gluefactory/robust_estimators/homography/homography_est.py)       |
+| ------------------------------------------------------------ | ------------------ | ------------------ |
+| [SP + LSD + GlueStick](gluefactory/configs/superpoint+lsd+gluestick.yaml) | 33.6 / 66.4 / 77.1 | 39.2 / 69.7 / 79.6 |
+
+</details>
+
+
+#### MegaDepth-1500
+
+Running the evaluation commands automatically downloads the dataset, which takes about 1.5 GB of disk space.
+
+<details>
+<summary>[Evaluating LightGlue]</summary>
+
+To evaluate the pre-trained SuperPoint+LightGlue model on MegaDepth-1500, run:
+```bash
+python -m gluefactory.eval.megadepth1500 --conf superpoint+lightglue-official
+# or the adaptive variant
+python -m gluefactory.eval.megadepth1500 --conf superpoint+lightglue-official \
+    model.matcher.{depth_confidence=0.95,width_confidence=0.95}
+```
+The first command should print the following results
+```
+{'mepi_prec@1e-3': 0.795,
+ 'mepi_prec@1e-4': 0.15,
+ 'mepi_prec@5e-4': 0.567,
+ 'mnum_keypoints': 2048.0,
+ 'mnum_matches': 613.287,
+ 'mransac_inl': 280.518,
+ 'mransac_inl%': 0.442,
+ 'rel_pose_error@10°': 0.681,
+ 'rel_pose_error@20°': 0.8065,
+ 'rel_pose_error@5°': 0.5102,
+ 'ransac_mAA': 0.6659}
+```
+
+To use the PoseLib estimator:
+
+```bash
+python -m gluefactory.eval.megadepth1500 --conf superpoint+lightglue-official \
+    eval.estimator=poselib eval.ransac_th=2.0
+```
+
+</details>
+
+<details>
+<summary>[Evaluating GlueStick]</summary>
+
+To evaluate the pre-trained SuperPoint+GlueStick model on MegaDepth-1500, run:
+```bash
+python -m gluefactory.eval.megadepth1500 --conf gluefactory/configs/superpoint+lsd+gluestick.yaml
+```
+
+</details>
+
+<details>
+
+Here are the results as Area Under the Curve (AUC) of the pose error at  5/10/20 degrees:
+
+| Methods                                                      | [pycolmap](../gluefactory/robust_estimators/relative_pose/pycolmap.py)         | [OpenCV](../gluefactory/robust_estimators/relative_pose/opencv.py)       | [PoseLib](../gluefactory/robust_estimators/relative_pose/poselib.py)      |
+| ------------------------------------------------------------ | ------------------ | ------------------ | ------------------ |
+| [SuperPoint + SuperGlue](gluefactory/configs/superpoint+superglue-official.yaml) | 54.4 / 70.4 / 82.4 | 48.7 / 65.6 / 79.0 | 64.8 / 77.9 / 87.0 |
+| [SuperPoint + LightGlue](gluefactory/configs/superpoint+lightglue-official.yaml) | 56.7 / 72.4 / 83.7 | 51.0 / 68.1 / 80.7 | 66.8 / 79.3 / 87.9 |
+| [SIFT (2K) + LightGlue](gluefactory/configs/sift+lightglue-official.yaml) | ? / ? / ? | 43.5 / 61.5 / 75.9 | 60.4 / 74.3 / 84.5 |
+| [SIFT (4K) + LightGlue](gluefactory/configs/sift+lightglue-official.yaml) | ? / ? / ? | 49.9 / 67.3 / 80.3 | 65.9 / 78.6 / 87.4 |
+| [ALIKED + LightGlue](gluefactory/configs/aliked+lightglue-official.yaml) | ? / ? / ? | 51.5 / 68.1 / 80.4 | 66.3 / 78.7 / 87.5 |
+| [SuperPoint + GlueStick](gluefactory/configs/superpoint+lsd+gluestick.yaml) | 53.2 / 69.8 / 81.9 | 46.3 / 64.2 / 78.1 | 64.4 / 77.5 / 86.5 |
+
+</details>
+
+
+#### ETH3D
+
+The dataset will be auto-downloaded if it is not found on disk, and will need about 6 GB of free disk space.
+
+<details>
+<summary>[Evaluating GlueStick]</summary>
+
+To evaluate GlueStick on ETH3D, run:
+```bash
+python -m gluefactory.eval.eth3d --conf gluefactory/configs/superpoint+lsd+gluestick.yaml
+```
+You should expect the following results
+```
+AP: 77.92
+AP_lines: 69.22
+```
+
+</details>
+
+#### Image Matching Challenge 2021
+Coming soon!
+
+#### Image Matching Challenge 2023
+Coming soon!
+
+#### Visual inspection
+<details>
+To inspect the evaluation visually, you can run:
+
+```bash
+python -m gluefactory.eval.inspect hpatches superpoint+lightglue-official
+```
+
+Click on a point to visualize matches on this pair.
+
+To compare multiple methods on a dataset:
+
+```bash
+python -m gluefactory.eval.inspect hpatches superpoint+lightglue-official superpoint+superglue-official
+```
+
+All current benchmarks are supported by the viewer.
+</details>
+
+Detailed evaluation instructions can be found [here](./docs/evaluation.md).
+
+## Training
+
+We generally follow a two-stage training:
+1. Pre-train on a large dataset of synthetic homographies applied to internet images. We use the 1M-image distractor set of the Oxford-Paris retrieval dataset. It requires about 450 GB of disk space.
+2. Fine-tune on the MegaDepth dataset, which is based on PhotoTourism pictures of popular landmarks around the world. It exhibits more complex and realistic appearance and viewpoint changes.  It requires about 420 GB of disk space.
+
+All training commands automatically download the datasets.
+
+<details>
+<summary>[Training LightGlue]</summary>
+
+We show how to train LightGlue with [SuperPoint](https://github.com/magicleap/SuperPointPretrainedNetwork).
+We first pre-train LightGlue on the homography dataset:
+```bash
+python -m gluefactory.train sp+lg_homography \  # experiment name
+    --conf gluefactory/configs/superpoint+lightglue_homography.yaml
+```
+Feel free to use any other experiment name. By default the checkpoints are written to `outputs/training/`. The default batch size of 128 corresponds to the results reported in the paper and requires 2x 3090 GPUs with 24GB of VRAM each as well as PyTorch >= 2.0 (FlashAttention).
+Configurations are managed by [OmegaConf](https://omegaconf.readthedocs.io/) so any entry can be overridden from the command line.
+If you have PyTorch < 2.0 or weaker GPUs, you may thus need to reduce the batch size via:
+```bash
+python -m gluefactory.train sp+lg_homography \
+    --conf gluefactory/configs/superpoint+lightglue_homography.yaml  \
+    data.batch_size=32  # for 1x 1080 GPU
+```
+Be aware that this can impact the overall performance. You might need to adjust the learning rate accordingly.
+
+We then fine-tune the model on the MegaDepth dataset:
+```bash
+python -m gluefactory.train sp+lg_megadepth \
+    --conf gluefactory/configs/superpoint+lightglue_megadepth.yaml \
+    train.load_experiment=sp+lg_homography
+```
+
+Here the default batch size is 32. To speed up training on MegaDepth, we suggest to cache the local features before training (requires around 150 GB of disk space):
+```bash
+# extract features
+python -m gluefactory.scripts.export_megadepth --method sp --num_workers 8
+# run training with cached features
+python -m gluefactory.train sp+lg_megadepth \
+    --conf gluefactory/configs/superpoint+lightglue_megadepth.yaml \
+    train.load_experiment=sp+lg_homography \
+    data.load_features.do=True
+```
+
+The model can then be evaluated using its experiment name:
+```bash
+python -m gluefactory.eval.megadepth1500 --checkpoint sp+lg_megadepth
+```
+
+You can also run all benchmarks after each training epoch with the option `--run_benchmarks`.
+
+</details>
+
+<details>
+<summary>[Training GlueStick]</summary>
+
+We first pre-train GlueStick on the homography dataset:
+```bash
+python -m gluefactory.train gluestick_H --conf gluefactory/configs/superpoint+lsd+gluestick-homography.yaml --distributed
+```
+Feel free to use any other experiment name. Configurations are managed by [OmegaConf](https://omegaconf.readthedocs.io/) so any entry can be overridden from the command line.
+
+We then fine-tune the model on the MegaDepth dataset:
+```bash
+python -m gluefactory.train gluestick_MD --conf gluefactory/configs/superpoint+lsd+gluestick-megadepth.yaml --distributed
+```
+Note that we used the training splits `train_scenes.txt` and `valid_scenes.txt` to train the original model, which contains some overlap with the IMC challenge. The new default splits are now `train_scenes_clean.txt` and `valid_scenes_clean.txt`, without this overlap.
+
+</details>
+
+### Available models
+Glue Factory supports training and evaluating the following deep matchers:
+| Model     | Training? | Evaluation? |
+| --------- | --------- | ----------- |
+| [LightGlue](https://github.com/cvg/LightGlue) | ✅         | ✅           |
+| [GlueStick](https://github.com/cvg/GlueStick) | ✅         | ✅           |
+| [SuperGlue](https://github.com/magicleap/SuperGluePretrainedNetwork) | ✅         | ✅           |
+| [LoFTR](https://github.com/zju3dv/LoFTR)     | ❌         | ✅           |
+
+Using the following local feature extractors:
+
+| Model     | LightGlue config |
+| --------- | --------- |
+| [SuperPoint (open)](https://github.com/rpautrat/SuperPoint) | `superpoint-open+lightglue_{homography,megadepth}.yaml` |
+| [SuperPoint (official)](https://github.com/magicleap/SuperPointPretrainedNetwork) | `superpoint+lightglue_{homography,megadepth}.yaml` |
+| SIFT (via [pycolmap](https://github.com/colmap/pycolmap)) | `sift+lightglue_{homography,megadepth}.yaml` |
+| [ALIKED](https://github.com/Shiaoming/ALIKED) | `aliked+lightglue_{homography,megadepth}.yaml` |
+| [DISK](https://github.com/cvlab-epfl/disk) | `disk+lightglue_{homography,megadepth}.yaml` |
+| Key.Net + HardNet | ❌ TODO |
+
+## Coming soon
+- [ ] More baselines (LoFTR, ASpanFormer, MatchFormer, SGMNet, DKM, RoMa)
+- [ ] Training deep detectors and descriptors like SuperPoint
+- [ ] IMC evaluations
+- [ ] Better documentation
+
+## BibTeX Citation
+Please consider citing the following papers if you found this library useful:
+```bibtex
+@InProceedings{lindenberger_2023_lightglue,
+  title     = {{LightGlue: Local Feature Matching at Light Speed}},
+  author    = {Philipp Lindenberger and
+               Paul-Edouard Sarlin and
+               Marc Pollefeys},
+  booktitle = {International Conference on Computer Vision (ICCV)},
+  year      = {2023}
+}
+```
+```bibtex
+@InProceedings{pautrat_suarez_2023_gluestick,
+  title     = {{GlueStick: Robust Image Matching by Sticking Points and Lines Together}},
+  author    = {R{\'e}mi Pautrat* and
+               Iago Su{\'a}rez* and
+               Yifan Yu and
+               Marc Pollefeys and
+               Viktor Larsson},
+  booktitle = {International Conference on Computer Vision (ICCV)},
+  year      = {2023}
+}
+```
