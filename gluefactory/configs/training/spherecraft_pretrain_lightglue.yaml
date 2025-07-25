@@ -1,6 +1,6 @@
 # @package _global_
 
-# This configuration is for FINE-TUNING LightGlue on the SphereCraft dataset.
+# This configuration is for pretraining LightGlue on the SphereCraft dataset.
 
 train:
   epochs: 40 # Reduced epochs for pretraining
@@ -41,8 +41,10 @@ data:
   
   # --- SphereCraft-specific parameters ---
   data_dir: 'pretraining'
+  pair_subdir: 'pairs'
   keypoints_detector: 'xfeat'
   
   # Batch sizes and workers
   train_batch_size: 4
   num_workers: 8
+  prefetch_factor: 2

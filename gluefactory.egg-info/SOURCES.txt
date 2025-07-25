@@ -32,6 +32,7 @@ gluefactory/configs/superpoint+superglue-official.yaml
 gluefactory/configs/superpoint-open+NN.yaml
 gluefactory/configs/superpoint-open+lightglue_homography.yaml
 gluefactory/configs/superpoint-open+lightglue_megadepth.yaml
+gluefactory/configs/superpoint_lightglue_spherecraft.yaml
 gluefactory/datasets/__init__.py
 gluefactory/datasets/augmentations.py
 gluefactory/datasets/base_dataset.py
@@ -41,7 +42,10 @@ gluefactory/datasets/hpatches.py
 gluefactory/datasets/image_folder.py
 gluefactory/datasets/image_pairs.py
 gluefactory/datasets/megadepth.py
+gluefactory/datasets/spherecraft.py
+gluefactory/datasets/spherecraft_pretraining.py
 gluefactory/datasets/utils.py
+gluefactory/datasets/vis.py
 gluefactory/datasets/megadepth_scene_lists/test_scenes_clean.txt
 gluefactory/datasets/megadepth_scene_lists/train_scenes.txt
 gluefactory/datasets/megadepth_scene_lists/train_scenes_clean.txt
@@ -109,16 +113,20 @@ gluefactory/robust_estimators/relative_pose/pycolmap.py
 gluefactory/scripts/__init__.py
 gluefactory/scripts/export_local_features.py
 gluefactory/scripts/export_megadepth.py
+gluefactory/scripts/test_spherecraft_loader.py
 gluefactory/utils/__init__.py
 gluefactory/utils/benchmark.py
+gluefactory/utils/equirectangular_utils.py
 gluefactory/utils/experiments.py
 gluefactory/utils/export_predictions.py
 gluefactory/utils/image.py
 gluefactory/utils/misc.py
 gluefactory/utils/patches.py
+gluefactory/utils/spherical_utils.py
 gluefactory/utils/stdout_capturing.py
 gluefactory/utils/tensor.py
 gluefactory/utils/tools.py
+gluefactory/utils/xfeat_utils.py
 gluefactory/visualization/global_frame.py
 gluefactory/visualization/tools.py
 gluefactory/visualization/two_view_frame.py
@@ -129,3 +137,4 @@ gluefactory_nonfree/superglue.py
 gluefactory_nonfree/superpoint.py
 tests/test_eval_utils.py
 tests/test_integration.py
+tests/test_my_lightglue.py
