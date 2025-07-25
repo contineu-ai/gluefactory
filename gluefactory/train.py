@@ -5,7 +5,6 @@ Author: Paul-Edouard Sarlin (skydes)
 """
 
 import argparse
-import os
 import copy
 import re
 import shutil
@@ -185,7 +184,7 @@ def pack_lr_parameters(params, base_lr, lr_scaling):
     return lr_params
 
 
-def training(conf, output_dir, args):
+def training(rank, conf, output_dir, args):
     if args.restore:
         logger.info(f"Restoring from previous training of {args.experiment}")
         try:
@@ -238,38 +237,21 @@ def training(conf, output_dir, args):
 
     OmegaConf.set_struct(conf, True)  # prevent access to unknown entries
     set_seed(conf.train.seed)
-
-    # Get rank and world size from environment variables set by torchrun
-    # This is the key change for multi-node compatibility.
-    rank = int(os.environ["RANK"])
-    world_size = int(os.environ["WORLD_SIZE"])
-    device_id = int(os.environ["LOCAL_RANK"]) # The GPU ID on the current node
-
     if rank == 0:
         writer = SummaryWriter(log_dir=str(output_dir))
 
     data_conf = copy.deepcopy(conf.data)
     if args.distributed:
-        logger.info(f"Initializing distributed process group for rank {rank} (local rank {device_id}) of {world_size} total processes.")
+        logger.info(f"Training in distributed mode with {args.n_gpus} GPUs")
         assert torch.cuda.is_available()
-        
-        # device = rank
-        # torch.distributed.init_process_group(
-        #     backend="nccl",
-        #     world_size=args.n_gpus,
-        #     rank=device,
-        #     init_method="file://" + str(args.lock_file),
-        # )
-
-        # MASTER_ADDR and MASTER_PORT are set by torchrun
-        # The backend is still 'nccl' for NVIDIA GPUs
-        torch.distributed.init_process_group(backend="nccl")
-
-        # The world_size and rank are now managed by the launcher
-        args.n_gpus = world_size # Update n_gpus to be the total world size
-        
-        torch.cuda.set_device(device_id)
-        device = device_id # Use the local rank as the device ID
+        device = rank
+        torch.distributed.init_process_group(
+            backend="nccl",
+            world_size=args.n_gpus,
+            rank=device,
+            init_method="file://" + str(args.lock_file),
+        )
+        torch.cuda.set_device(device)
 
         # adjust batch size and num of workers since these are per GPU
         if "batch_size" in data_conf:
@@ -281,9 +263,7 @@ def training(conf, output_dir, args):
                 (data_conf.num_workers + args.n_gpus - 1) / args.n_gpus
             )
     else:
-        rank = 0
         device = "cuda" if torch.cuda.is_available() else "cpu"
-
     logger.info(f"Using device {device}")
 
     dataset = get_dataset(data_conf.name)(data_conf)
@@ -701,28 +681,23 @@ if __name__ == "__main__":
     elif args.restore:
         restore_conf = OmegaConf.load(output_dir / "config.yaml")
         conf = OmegaConf.merge(restore_conf, conf)
-
-    is_main_process = (not args.distributed) or (int(os.environ.get("RANK", 0)) == 0)
-
-    if not args.restore and is_main_process:
+    if not args.restore:
         if conf.train.seed is None:
             conf.train.seed = torch.initial_seed() & (2**32 - 1)
         OmegaConf.save(conf, str(output_dir / "config.yaml"))
 
-        # copy gluefactory and submodule into output dir
-        for module in conf.train.get("submodules", []) + [__module_name__]:
-            mod_dir = Path(__import__(str(module)).__file__).parent
-            shutil.copytree(mod_dir, output_dir / module, dirs_exist_ok=True)
+    # copy gluefactory and submodule into output dir
+    for module in conf.train.get("submodules", []) + [__module_name__]:
+        mod_dir = Path(__import__(str(module)).__file__).parent
+        shutil.copytree(mod_dir, output_dir / module, dirs_exist_ok=True)
 
-    training(conf, output_dir, args)
-
-    # if args.distributed:
-    #     args.n_gpus = torch.cuda.device_count()
-    #     args.lock_file = output_dir / "distributed_lock"
-    #     if args.lock_file.exists():
-    #         args.lock_file.unlink()
-    #     torch.multiprocessing.spawn(
-    #         main_worker, nprocs=args.n_gpus, args=(conf, output_dir, args)
-    #     )
-    # else:
-    #     main_worker(0, conf, output_dir, args)
+    if args.distributed:
+        args.n_gpus = torch.cuda.device_count()
+        args.lock_file = output_dir / "distributed_lock"
+        if args.lock_file.exists():
+            args.lock_file.unlink()
+        torch.multiprocessing.spawn(
+            main_worker, nprocs=args.n_gpus, args=(conf, output_dir, args)
+        )
+    else:
+        main_worker(0, conf, output_dir, args)
