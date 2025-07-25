@@ -13,9 +13,9 @@ logger = logging.getLogger(__name__)
 
 class SphereCraftPretrainingDataset(BaseDataset):
     default_conf = {
-        "batch_size": ???,
-        "num_workers": ???,
-        "prefetch_factor": ???,
+        "batch_size": 8,
+        "num_workers": 8,
+        "prefetch_factor": 2,
 
         # --- Paths ---
         "data_dir": "pretraining", # Root for all SphereCraft scenes, relative to DATA_PATH
