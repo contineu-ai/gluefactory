@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import argparse
 from pathlib import Path
 from omegaconf import OmegaConf
 
@@ -13,11 +14,6 @@ from gluefactory.utils.equirectangular_utils import equirectangular_to_dicemap
 from gluefactory.visualization.viz2d import plot_images, plot_keypoints, plot_matches
 from torch.nn.utils.rnn import pad_sequence
 
-# --- Step 1: Configuration ---
-# Update these paths to your files
-CHECKPOINT_PATH = Path("/mnt/d/code/glue-factory/outputs/training/spherecraft_pretrain_lightglue_run1/checkpoint_best.tar")
-IMAGE_PATH_0 = Path("/mnt/d/code/glue-factory/data/pretraining-1/images/00000000.jpg")
-IMAGE_PATH_1 = Path("/mnt/d/code/glue-factory/data/pretraining-1/images/00000003.jpg")
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
@@ -37,7 +33,7 @@ def standard_spherical_to_pixel(kpts_sph_np, W, H):
     return np.stack([px, py], axis=-1)
 
 # --- Helper function for visualization ---
-def visualize_batch_item(image0, image1, kpts0, kpts1, matches, color=None,
+def visualize_batch_item(image0, image1, kpts0, kpts1, matches, output_path, color=None,
                        text=None, path=None, show_keypoints=False,
                        fast_viz=False, opencv_display=False,
                        opencv_title='matches'):
@@ -88,7 +84,8 @@ def visualize_batch_item(image0, image1, kpts0, kpts1, matches, color=None,
 
     # 5. Add a title to the whole figure.
     fig.suptitle(f"Keypoints for Pair", fontsize=16)
-    plt.show() # Display the first plot
+    plt.savefig(f"{output_path}_keypoints.png")
+    # plt.show() # Display the first plot
 
     # 6. Plot the matches in a separate figure.
     # plot_matches creates its own figure with the two images and the match lines.
@@ -98,14 +95,15 @@ def visualize_batch_item(image0, image1, kpts0, kpts1, matches, color=None,
         plot_images([img0, img1], titles=["Image 0", "Image 1"])
         plot_matches(kpts0_matched, kpts1_matched, ps=6, lw=0.7)
         plt.gcf().suptitle(f"GT Matches", fontsize=16)
-        plt.show() # Display the second plot
+        plt.savefig(f"{output_path}_matches.png")
+        # plt.show() # Display the second plot
 
-def main():
+def main(checkpoint, image0, image1, output):
     # --- Step 2: Load the trained LightGlue model ---
     print("Loading trained LightGlue model...")
     # Load the checkpoint. We load to CPU to avoid potential GPU memory issues.
-    checkpoint = torch.load(str(CHECKPOINT_PATH), map_location='cpu')
-    
+    checkpoint = torch.load(str(checkpoint), map_location='cpu')
+
     # The checkpoint is a dictionary containing 'conf' and 'model' state_dict
     conf = OmegaConf.create(checkpoint['conf'])
     
@@ -127,8 +125,13 @@ def main():
     # --- Step 4: Load images and extract features ---
     print("Extracting features from images...")
     # Load images as grayscale numpy arrays
-    image0_bgr = cv2.imread(str(IMAGE_PATH_0))
-    image1_bgr = cv2.imread(str(IMAGE_PATH_1))
+    image0_bgr = cv2.imread(str(image0))
+    image1_bgr = cv2.imread(str(image1))
+
+    name = f"{Path(image0).stem}_{Path(image1).stem}"
+    output_dir = Path(output)
+    output_path = output_dir / f"{name}_matches.png"
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     # Convert to tensors for the feature extractor
     image0_dicemap = equirectangular_to_dicemap(image0_bgr)
@@ -186,9 +189,22 @@ def main():
         kpts0,
         kpts1,
         matches_indices,
+        output_path,
         show_keypoints=False,
         opencv_title=f"Matches ({len(matches_indices)})"
     )
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Test My LightGlue Model")
+    parser.add_argument('--checkpoint', type=str, help='Path to the model checkpoint')
+    parser.add_argument('--image0', type=str, help='Path to the first image')
+    parser.add_argument('--image1', type=str, help='Path to the second image')
+    parser.add_argument('--output', type=str, help='Output directory for results')
+
+    args = parser.parse_args()
+    main(
+        checkpoint=args.checkpoint,
+        image0=args.image0,
+        image1=args.image1,
+        output=args.output
+    )

@@ -1,3 +1,6 @@
 outputs/
 data/
 datasets
+test_video
+tests/result_1_fps
+tests/result_3_fps

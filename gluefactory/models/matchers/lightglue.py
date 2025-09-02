@@ -344,14 +344,14 @@ class LightGlue(nn.Module):
         "name": "lightglue",  # just for interfacing
         "input_dim": 64,  # input descriptor dimension (autoselected from weights)
         "add_scale_ori": False,
-        "descriptor_dim": 256,
-        "n_layers": 9,
-        "num_heads": 4,
+        "descriptor_dim": 96,
+        "n_layers": 6,
+        "num_heads": 1,
         "flash": True,  # enable FlashAttention if available.
         "mp": False,  # enable mixed precision
         "depth_confidence": -1,  # early stopping, disable with -1
         "width_confidence": -1,  # point pruning, disable with -1
-        "filter_threshold": 0.0,  # match threshold
+        "filter_threshold": 0.1,  # match threshold
         "checkpointed": False,
         "weights": None,  # either a path or the name of pretrained weights (disk, ...)
         "weights_from_version": "v0.1_arxiv",
@@ -440,7 +440,7 @@ class LightGlue(nn.Module):
         b, m, _ = kpts0.shape
         b, n, _ = kpts1.shape
         
-        assert m == n, f"Number of keypoints in both views must be equal, got {m} and {n}."
+        # assert m == n, f"Number of keypoints in both views must be equal, got {m} and {n}."
         
         device = kpts0.device
 

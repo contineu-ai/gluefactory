@@ -18,6 +18,7 @@ import torch
 from omegaconf import OmegaConf
 from torch.cuda.amp import GradScaler, autocast
 from torch.utils.tensorboard import SummaryWriter
+from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from tqdm import tqdm
 
 from . import __module_name__, logger
@@ -142,15 +143,40 @@ def filter_parameters(params, regexp):
     return params
 
 
-def get_lr_scheduler(optimizer, conf):
+def get_lr_scheduler(optimizer, conf, total_steps=None):
     """Get lr scheduler specified by conf.train.lr_schedule."""
-    if conf.type not in ["factor", "exp", None]:
+    if conf.type is None:
+        # No scheduler, return a dummy one
+        return torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda x: 1.0)
+    
+    # New scheduler with warmup
+    if conf.type == 'warmup_cosine':
+        if total_steps is None:
+            raise ValueError("total_steps must be provided for warmup_cosine scheduler.")
+        
+        logger.info(
+            f"Using Warmup+Cosine scheduler with {conf.warmup_steps} warmup steps."
+        )
+
+        scheduler_warmup = LinearLR(
+            optimizer, start_factor=0.01, total_iters=conf.warmup_steps
+        )
+        scheduler_cosine = CosineAnnealingLR(
+            optimizer, T_max=(total_steps - conf.warmup_steps)
+        )
+        # Chain them together
+        scheduler = SequentialLR(
+            optimizer, schedulers=[scheduler_warmup, scheduler_cosine], 
+            milestones=[conf.warmup_steps]
+        )
+        return scheduler
+
+    # Fallback to original implementation if not using the new one
+    if conf.type not in ["factor", "exp"]:
         return getattr(torch.optim.lr_scheduler, conf.type)(optimizer, **conf.options)
 
     # backward compatibility
-    def lr_fn(it):  # noqa: E306
-        if conf.type is None:
-            return 1
+    def lr_fn(it):
         if conf.type == "factor":
             return 1.0 if it < conf.start else conf.factor
         if conf.type == "exp":
@@ -158,9 +184,8 @@ def get_lr_scheduler(optimizer, conf):
             return 1.0 if it < conf.start else gam
         else:
             raise ValueError(conf.type)
-
+    
     return torch.optim.lr_scheduler.MultiplicativeLR(optimizer, lr_fn)
-
 
 def pack_lr_parameters(params, base_lr, lr_scaling):
     """Pack each group of parameters with the respective scaled learning rate."""
@@ -215,8 +240,7 @@ def training(rank, conf, output_dir, args):
                 checkpoint_path = get_best_checkpoint(conf.train.load_experiment)
             
             logger.info(f"Loading checkpoint from {checkpoint_path}")
-            init_cp = torch.load(str(checkpoint_path), map_location="cpu")
-            
+            init_cp = torch.load(str(checkpoint_path), map_location="cpu")            
             # Check if the loaded checkpoint is a full experiment dump or just model weights.
             if 'conf' in init_cp and 'model' in init_cp:
                 logger.info("Checkpoint is a full experiment dump. Merging model configs.")
@@ -343,7 +367,8 @@ def training(rank, conf, output_dir, args):
 
     results = None  # fix bug with it saving
 
-    lr_scheduler = get_lr_scheduler(optimizer=optimizer, conf=conf.train.lr_schedule)
+    total_steps = len(train_loader) * conf.train.epochs
+    lr_scheduler = get_lr_scheduler(optimizer=optimizer, conf=conf.train.lr_schedule, total_steps=total_steps)
     if args.restore:
         optimizer.load_state_dict(init_cp["optimizer"])
         if "lr_scheduler" in init_cp:

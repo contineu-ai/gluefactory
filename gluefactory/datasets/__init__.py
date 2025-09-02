@@ -5,17 +5,12 @@ from ..utils.tools import get_class
 from .base_dataset import BaseDataset
 
 from .spherecraft import SphereCraftDataset
-from .spherecraft_pretraining import SphereCraftPretrainingDataset
 
 logger = logging.getLogger(__name__) # Add logger
 
 # Pre-register known datasets
 AVAILABLE_DATASETS = {
     'spherecraft': SphereCraftDataset,
-    'spherecraft_pretraining': SphereCraftPretrainingDataset,
-    # Add other known datasets here, e.g.
-    # 'megadepth': MegaDepth, (if you import it)
-    # 'hpatches': HPatches,
 }
 
 def get_dataset(name):

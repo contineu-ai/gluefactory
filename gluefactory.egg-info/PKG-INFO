@@ -1,4 +1,4 @@
-Metadata-Version: 2.4
+Metadata-Version: 2.1
 Name: gluefactory
 Version: 0.0
 Summary: Training and evaluation of local feature extraction and matching
@@ -238,7 +238,6 @@ Requires-Dist: black; extra == "dev"
 Requires-Dist: flake8; extra == "dev"
 Requires-Dist: isort; extra == "dev"
 Requires-Dist: parameterized; extra == "dev"
-Dynamic: license-file
 
 # Glue Factory
 Glue Factory is CVG's library for training and evaluating deep neural network that extract and match local visual feature. It enables you to:
