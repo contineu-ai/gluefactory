@@ -9,10 +9,14 @@ import numpy as np
 GLUE_FACTORY_ROOT = Path(__file__).resolve().parent.parent # Example if script is in glue_factory_root/scripts/
 sys.path.insert(0, str(GLUE_FACTORY_ROOT))
 # --- ---
-
-from gluefactory.settings import DATA_PATH # To confirm where data is expected
-from gluefactory.datasets import get_dataset # The function from datasets/__init__.py
-from gluefactory.visualization.viz2d import plot_images, plot_keypoints, plot_matches # For visualization
+try:
+    from gluefactory.settings import DATA_PATH # To confirm where data is expected
+    from gluefactory.datasets import get_dataset # The function from datasets/__init__.py
+    from gluefactory.visualization.viz2d import plot_images, plot_keypoints, plot_matches # For visualization
+except ImportError:
+    print("Error: Could not import 'gluefactory' utilities.")
+    print("Please ensure the GlueFactory library is installed and in your Python path.")
+    sys.exit(1)
 
 def standard_spherical_to_pixel(kpts_sph_np, W, H):
     """
@@ -98,7 +102,7 @@ if __name__ == "__main__":
     # 2. Instantiate the top-level dataset class
     # The `get_dataset` function from datasets/__init__.py should find 'spherecraft'
     # and return the SphereCraftDataset class.
-    SphereCraftDatasetClass = get_dataset("spherecraft_pretraining")
+    SphereCraftDatasetClass = get_dataset("spherecraft")
     spherecraft_dataset_manager = SphereCraftDatasetClass({})
 
 

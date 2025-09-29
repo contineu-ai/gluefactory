@@ -1,6 +1,5 @@
 import numpy as np
 import logging
-import numpy as np
 from cupyx.scipy.ndimage import map_coordinates
 
 logger = logging.getLogger('job_executor')

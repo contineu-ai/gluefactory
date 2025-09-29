@@ -91,6 +91,7 @@ gluefactory/scripts/__init__.py
 gluefactory/scripts/export_local_features.py
 gluefactory/scripts/export_megadepth.py
 gluefactory/scripts/finetuning_data.py
+gluefactory/scripts/spherecraft_finetuning.py
 gluefactory/scripts/test_spherecraft_loader.py
 gluefactory/utils/__init__.py
 gluefactory/utils/benchmark.py

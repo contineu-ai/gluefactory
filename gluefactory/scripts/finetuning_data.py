@@ -1,10 +1,8 @@
 import os
 import sys
 import logging
-import itertools
 from pathlib import Path
-from collections import defaultdict
-from typing import Dict, List, Tuple, Any
+from typing import Dict, Any
 import OpenEXR as exr
 import Imath
 import numpy as np
@@ -70,7 +68,6 @@ def parse_nvm_cameras(nvm_parser: NVMParser, model_index: int = 0) -> Dict[str, 
 def get_depth_at_spherical_coords(depth_map: np.ndarray, kpts_spherical: np.ndarray) -> np.ndarray:
     """Samples depth values from an equirectangular depth map for given spherical coords."""
     h, w = depth_map.shape[:2]
-    phi, theta = kpts_spherical[:, 0], kpts_spherical[:, 1]
     
     # Convert spherical to pixel coordinates
     # (u,v) -> (x,y)
@@ -199,9 +196,9 @@ def generate_sfm_groundtruth(
     valid_depth_mask = depths_A > 0
 
     if not np.any(valid_depth_mask):
-         return {'matches': np.empty((0, 2), dtype=int),
-                 'gt_matches0': np.full(kpts_A_sph.shape[0], -1, dtype=int),
-                 'gt_matches1': np.full(kpts_B_sph.shape[0], -1, dtype=int)}
+        return {'matches': np.empty((0, 2), dtype=int),
+                'gt_matches0': np.full(kpts_A_sph.shape[0], -1, dtype=int),
+                'gt_matches1': np.full(kpts_B_sph.shape[0], -1, dtype=int)}
 
     # 3. Project valid keypoints from A to 3D, then to B's frame
     kpts_A_valid_sph = kpts_A_sph[valid_depth_mask]
@@ -223,7 +220,6 @@ def generate_sfm_groundtruth(
     # 5. Mutual Nearest Neighbor check
     best_match_for_A = np.argmin(angular_distance_matrix, axis=1)
     min_distances_for_A = np.min(angular_distance_matrix, axis=1)
-
     best_match_for_B = np.argmin(angular_distance_matrix, axis=0)
     
     # The indices of the valid keypoints from the original kpts_A list

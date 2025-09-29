@@ -5,6 +5,7 @@ import os
 from torch.utils.data import Dataset # Direct import is fine
 from ..settings import DATA_PATH # Assuming this is where datasets are stored
 from .base_dataset import BaseDataset # Crucial import
+from ..utils.image import load_image
 
 logger = logging.getLogger(__name__)
 
@@ -15,8 +16,8 @@ class SphereCraftDataset(BaseDataset):
         "prefetch_factor": 2,
 
         # --- Paths ---
-        "data_dir": "finetuning", # Root for all SphereCraft scenes, relative to DATA_PATH
-        "pair_subdir": "pairs2/easy",
+        "data_dir": "/data/code/glue-factory/datasets/spherecraft_data/barbershop", # Root for all SphereCraft scenes, relative to DATA_PATH
+        "pair_subdir": "finetune_pairs_xfeat_spherical",
         "keypoints_detector": "xfeat", # e.g., 'superpoint', 'sift'
     }
 
@@ -100,17 +101,17 @@ class _PairDatasetSphereCraft(Dataset): # Standard PyTorch Dataset
         # image_size1 = torch.from_numpy(data['image_size1'])
         # name = str(data['name']) # Ensure name is a plain string
         name = pair_name.split('.')[0]
-
-        # image0 = load_image(f"/mnt/d/code/glue-factory/data/finetuning/688cabe1568a518c577a0f7c/688cba040abb8edc0d488cd0/images/{name.split('_')[0]}")
-        # image1 = load_image(f"/mnt/d/code/glue-factory/data/finetuning/688cabe1568a518c577a0f7c/688cba040abb8edc0d488cd0/images/{name.split('_')[1]}")
+        
+        image0 = load_image(f"/data/code/glue-factory/datasets/spherecraft_data/barbershop/images/{name.split('_')[0]}.jpg")
+        image1 = load_image(f"/data/code/glue-factory/datasets/spherecraft_data/barbershop/images/{name.split('_')[1]}.jpg")
         return {
-            # 'image0': image0,
+            'image0': image0,
             'keypoints0': keypoints0,
             'descriptors0':descriptors0,
             'scores0': scores0,
             # 'image_size0': image_size0, # not needed for normalization since using spherical coordinates
 
-            # 'image1': image1,
+            'image1': image1,
             'keypoints1': keypoints1,
             'descriptors1': descriptors1,
             'scores1': scores1,

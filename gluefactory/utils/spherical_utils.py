@@ -22,7 +22,7 @@ def cartesian_to_spherical(xyz_np):
     x, y, z = xyz_np[:, 0], xyz_np[:, 1], xyz_np[:, 2]
     
     phi = np.arctan2(x, z)
-    theta = np.arctan2(y, np.sqrt(x**2 + z**2))
+    theta = np.arcsin(y)
     return np.stack([phi, theta], axis=-1)
 
 def standard_spherical_to_pixel(kpts_sph_np, W, H):
@@ -39,6 +39,21 @@ def standard_spherical_to_pixel(kpts_sph_np, W, H):
     py = (-theta / np.pi + 0.5) * (H - 1) - 0.5
     
     return np.stack([px, py], axis=-1)
+
+def standard_pixel_to_spherical(kpts_np, W, H):
+    """
+    Converts standard pixel coordinates to spherical coordinates.
+    phi: longitude [-pi, pi] <- x [0, W]
+    theta: latitude [-pi/2, pi/2] <- y [0, H]
+    """
+    px = kpts_np[:, 0]
+    py = kpts_np[:, 1]
+
+    # Normalize phi to [0, 1] and theta to [0, 1] and Scale to pixel coordinates
+    phi = ((px + 0.5) / (W - 1) - 0.5) * 2 * np.pi
+    theta = (0.5 - (py + 0.5) / (H - 1))*np.pi
+    
+    return np.stack([phi, theta], axis=-1)
 
 def rotation_matrix(yaw, pitch, roll):
     """
@@ -161,8 +176,8 @@ def rotate_image_batch(image_np, yaw, pitch, roll):
         torch.Tensor: The batch of rotated images.
     """
     
-    B, C, H, W = images_torch.shape
-    device = images_torch.device
+    # B, C, H, W = images_torch.shape
+    # device = images_torch.device
 
     # 1. Convert image to numpy array if it's a tensor
     image_np = image_np.cpu().numpy() if isinstance(image_np, torch.Tensor) else image_np

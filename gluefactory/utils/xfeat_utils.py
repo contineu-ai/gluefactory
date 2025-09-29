@@ -1,6 +1,6 @@
 # --- xfeat import ---
 import sys
-sys.path.append("/mnt/d/code/accelerated_features")
+sys.path.append("/data/code/accelerated_features")
 from modules.xfeat import XFeat
 import matplotlib.pyplot as plt
 import numpy as np
@@ -74,21 +74,20 @@ def face_to_xyz(face_name, face_x, face_y, dims):
 
 def xyz_to_uv(xyz):
     """
-    Step 4: Convert 3D cartesian coordinates to spherical coordinates (u, v).
+    Step 4: Convert 3D cartesian coordinates to spherical coordinates (phi, theta).
     """
     x, y, z = xyz
-    u = np.arctan2(x, z)  # Azimuthal angle (longitude)
-    c = np.sqrt(x**2 + z**2)
-    v = np.arctan2(y, c)  # Polar angle (latitude)
-    return u, v
+    phi = np.arctan2(x, z)  # Azimuthal angle (longitude)
+    theta = np.arcsin(y)  # Polar angle (latitude)
+    return phi, theta
 
 
-def uv_to_equirectangular(u, v, dims):
+def uv_to_equirectangular(phi, theta, dims):
     """
-    Step 5: Convert spherical (u, v) coordinates to equirectangular pixel coordinates.
+    Step 5: Convert spherical (phi, theta) coordinates to equirectangular pixel coordinates.
     """
-    x = (u / (2 * np.pi) + 0.5) * dims['EQUI_W'] - 0.5
-    y = (-v / np.pi + 0.5) * dims['EQUI_H'] - 0.5
+    x = (phi / (2 * np.pi) + 0.5) * dims['EQUI_W'] - 0.5
+    y = (-theta / np.pi + 0.5) * dims['EQUI_H'] - 0.5
     return x, y
 
 
@@ -106,12 +105,12 @@ def dicemap_to_equirectangular_keypoints(dicemap_x, dicemap_y, dims):
     xyz_sphere = face_to_xyz(face_name, face_x, face_y, dims)
     
     # 3. 3D Sphere coordinate to (u,v)
-    u, v = xyz_to_uv(xyz_sphere)
+    phi, theta = xyz_to_uv(xyz_sphere)
 
     # 4. (u,v) to Equirectangular coordinate
-    equi_x, equi_y = uv_to_equirectangular(u, v, dims)
+    equi_x, equi_y = uv_to_equirectangular(phi, theta, dims)
     
-    return equi_x, equi_y, u, v
+    return equi_x, equi_y, phi, theta
 
 
 # --- Main Orchestration Function ---
