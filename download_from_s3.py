@@ -6,8 +6,8 @@ from botocore.exceptions import ClientError
 BUCKET_NAME = "contineu-ai-dev-bucket"
 S3_PREFIX = "67dbee940e56164c4d12d8e2/panoramic-views/67e56da1a54e4b0012d0f668/"
 # S3_PREFIX = "67dbee940e56164c4d12d8e2/point-clouds/67e56da1a54e4b0012d0f668/"
-LOCAL_DOWNLOAD_DIRECTORY = r"/mnt/d/code/glue-factory/data/finetuning/67dbee940e56164c4d12d8e2/67e56da1a54e4b0012d0f668/images"
-# LOCAL_DOWNLOAD_DIRECTORY = r"/mnt/d/code/glue-factory/data/finetuning/67dbee940e56164c4d12d8e2/67e56da1a54e4b0012d0f668/pointcloud"
+LOCAL_DOWNLOAD_DIRECTORY = r"/data/code/glue-factory/data/finetuning/67dbee940e56164c4d12d8e2/67e56da1a54e4b0012d0f668/images"
+# LOCAL_DOWNLOAD_DIRECTORY = r"/data/code/glue-factory/data/finetuning/67dbee940e56164c4d12d8e2/67e56da1a54e4b0012d0f668/pointcloud"
 
 # --- Function to Download from S3 ---
 def download_s3_folder(bucket_name, s3_prefix, local_dir):

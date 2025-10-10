@@ -100,6 +100,7 @@ class _PairDatasetSphereCraft(Dataset): # Standard PyTorch Dataset
         # image_size0 = torch.from_numpy(data['image_size0'])
         # image_size1 = torch.from_numpy(data['image_size1'])
         # name = str(data['name']) # Ensure name is a plain string
+        print(pair_name)
         name = pair_name.split('.')[0]
         
         image0 = load_image(f"/data/code/glue-factory/datasets/spherecraft_data/barbershop/images/{name.split('_')[0]}.jpg")

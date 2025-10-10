@@ -96,8 +96,8 @@ class GPU_Convert:
         cubemap_images_dict = self.e2c(img, self.coors_xy)
         return cubemap_images_dict
 
-
 def equirectangular_to_dicemap(image_np):
+    
     converter = GPU_Convert(image_np.shape)
     cubemap_images = converter.convert_to_cubemaps(image_np)
 

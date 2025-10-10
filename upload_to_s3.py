@@ -2,9 +2,9 @@ import os
 import boto3
 import tqdm
 
-LOCAL_DIRECTORY = r"/data/Code/glue-factory/datasets/spherecraft_data/bank/gt_correspondences"
+LOCAL_DIRECTORY = r"/data/code/glue-factory/datasets/spherecraft_data/middleEast/features_xfeat_spherical"
 BUCKET_NAME = "spherecraft-dataset"
-S3_PREFIX = "bank/gt_correspondences"
+S3_PREFIX = "middleEast/features_xfeat_spherical"
 
 def upload_to_s3():
     s3_client = boto3.client('s3')

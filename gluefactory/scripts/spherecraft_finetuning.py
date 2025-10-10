@@ -224,7 +224,7 @@ def generate_finetuning_pairs(config: Dict):
     # 3. Process pairs in parallel
     def worker_process_pair(stem1: str, stem2: str):
         # try:
-        output_filename = f"{stem1}_{stem2}.npz"
+        output_filename = f"{config['dataset_name']}_{stem1}_{stem2}.npz"
         output_path = config['output_dir'] / output_filename
         # if output_path.exists():
         #     return f"Skipped pair {stem1}-{stem2}, already exists."
@@ -290,7 +290,7 @@ def generate_finetuning_pairs(config: Dict):
         #     return f"Failed to process pair {stem1}-{stem2}: {e}"
 
     logging.info(f"Starting to process {len(pairs_to_process)} pairs in parallel...")
-    results = Parallel(n_jobs=16, verbose=1)(delayed(worker_process_pair)(p[0], p[1]) for p in pairs_to_process)
+    results = Parallel(n_jobs=20, verbose=1)(delayed(worker_process_pair)(p[0], p[1]) for p in pairs_to_process)
     for res in results:
         if "Warning" in res or "Failed" in res:
             logging.warning(res)
@@ -303,8 +303,9 @@ def generate_finetuning_pairs(config: Dict):
 
 def main():
     # --- Configuration for your 'barbershop' dataset ---
-    DATASET_NAME = "garage"
+    DATASET_NAME = "middleEast"
     BASE_PATH = Path(f"/data/code/glue-factory/datasets/spherecraft_data/{DATASET_NAME}")
+    OUTPUT_PATH = Path("/data/code/glue-factory/data/finetuning/finetuning_pairs_spherecraft")
     
     CONFIG = {
         # Input Paths
@@ -315,11 +316,14 @@ def main():
 
         # Output Paths
         "feature_dir": BASE_PATH / "features_xfeat_spherical",
-        "output_dir": BASE_PATH / "finetune_pairs_xfeat_spherical",
+        "output_dir": OUTPUT_PATH,
 
         # Parameters
         "num_keypoints": 2048,
         "angle_threshold": 1, # Angular threshold in degrees for a match
+
+        # Dataset Name
+        "dataset_name": DATASET_NAME
     }
 
     # --- Execute Pipeline ---
@@ -333,11 +337,11 @@ def main():
         logging.info("Skipping feature extraction as requested.")
         
         
-    # 2. Pair Generation
+    # # 2. Pair Generation
     # generate_finetuning_pairs(CONFIG)
     
-    logging.info("--- Pipeline Finished ---")
-    logging.info(f"Output saved to: {CONFIG['output_dir']}")
+    # logging.info("--- Pipeline Finished ---")
+    # logging.info(f"Output saved to: {CONFIG['output_dir']}")
 
 if __name__ == "__main__":
     main()

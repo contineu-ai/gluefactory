@@ -2,7 +2,6 @@ import torch
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 import argparse
 from pathlib import Path
 from omegaconf import OmegaConf
@@ -125,8 +124,8 @@ def main(checkpoint, image0, image1, output):
     # --- Step 4: Load images and extract features ---
     print("Extracting features from images...")
     # Load images as grayscale numpy arrays
-    image0_bgr = cv2.imread(str(image0))
-    image1_bgr = cv2.imread(str(image1))
+    image0_bgr = cv2.resize(cv2.imread(str(image0)), (1920, 960))
+    image1_bgr = cv2.resize(cv2.imread(str(image1)), (1920, 960))
 
     name = f"{Path(image0).stem}_{Path(image1).stem}"
     output_dir = Path(output)

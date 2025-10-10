@@ -1,35 +1,41 @@
 import subprocess
 import sys
 import os
+from itertools import product
 
-PATH_TO_TESTS = '/mnt/d/code/glue-factory/test_video'
+PATH1 = '/data/code/glue-factory/68bc279594638700124b9aa2'
+PATH2 = '/data/code/glue-factory/68d5463994638700124b9ad2'
+
+files1 = os.listdir(PATH1)  
+files2 = os.listdir(PATH2)
+
+pairs = product(files1, files2, repeat=1)
 
 def run_tests():
     """
     Run the test suite for the LightGlue model.
     """
 
-    files = os.listdir(PATH_TO_TESTS)  # Ensure we are in the correct directory
-
-    for i in range(len(files) - 1):
+    for pair in pairs:
         try:
             # Run pytest on the test_my_lightglue.py file
             result = subprocess.run(
                 [sys.executable, 'tests/test_my_lightglue.py', 
                 '--checkpoint', 
-                '/mnt/d/code/glue-factory/outputs/training/spherecraft_pretrain_lightglue_run3/checkpoint_best.tar',
+                '/data'
+                '/code/glue-factory/outputs/training/spherecraft_pretrain_lightglue_run3/checkpoint_best.tar',
                 '--image0', 
-                f'{PATH_TO_TESTS}/{files[i]}',
+                f'{PATH1}/{pair[0]}',
                 '--image1',
-                f'{PATH_TO_TESTS}/{files[i+1]}',
+                f'{PATH2}/{pair[1]}',
                 '--output', 
-                '/mnt/d/code/glue-factory/tests/result_3_fps'],
+                '/data/code/glue-factory/result_aa2_ad2'],
                 check=True,
                 capture_output=True,
                 text=True
             )
-            print("Tests passed successfully.")
             print(result.stdout)
+
         except subprocess.CalledProcessError as e:
             print("Tests failed.")
             print(e.stdout)
