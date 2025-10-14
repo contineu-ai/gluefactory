@@ -17,7 +17,6 @@ from gluefactory.utils.spherical_utils import standard_spherical_to_pixel, stand
 from gluefactory.utils.spherecraft_utils import read_depth, get_c2w_and_w2c_matrix, warp_se3_spherical
 
 # Third-party libraries (ensure these are installed)
-import Imath
 import numpy as np
 import torch
 import cv2

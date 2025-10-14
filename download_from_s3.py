@@ -1,66 +1,147 @@
 import os
+import argparse
 import boto3
 from botocore.exceptions import ClientError
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm.auto import tqdm
 
 # --- Configuration ---
-BUCKET_NAME = "contineu-ai-dev-bucket"
-S3_PREFIX = "67dbee940e56164c4d12d8e2/panoramic-views/67e56da1a54e4b0012d0f668/"
-# S3_PREFIX = "67dbee940e56164c4d12d8e2/point-clouds/67e56da1a54e4b0012d0f668/"
-LOCAL_DOWNLOAD_DIRECTORY = r"/data/code/glue-factory/data/finetuning/67dbee940e56164c4d12d8e2/67e56da1a54e4b0012d0f668/images"
-# LOCAL_DOWNLOAD_DIRECTORY = r"/data/code/glue-factory/data/finetuning/67dbee940e56164c4d12d8e2/67e56da1a54e4b0012d0f668/pointcloud"
 
-# --- Function to Download from S3 ---
-def download_s3_folder(bucket_name, s3_prefix, local_dir):
+# The S3 bucket where the data is stored.
+BUCKET_NAME = "spherecraft-dataset"
+
+# The local base directory where scenes will be downloaded.
+# The final path will be: LOCAL_BASE_DIRECTORY/{scene_name}/
+LOCAL_BASE_DIRECTORY = "/data/code/"
+
+# List of S3 prefixes (files or folders) to download for each scene.
+# These will be appended to the scene name.
+ITEMS_TO_DOWNLOAD = [
+    "superpoint_train.txt",
+    "images",
+    "depthmaps",
+    "extr",
+    "features_xfeat_spherical",
+]
+
+# Number of parallel download threads.
+DEFAULT_WORKERS = 10
+
+# --- S3 Download Logic ---
+
+def _download_file(s3_client, bucket, s3_key, local_path):
+    """Helper function to download a single file and handle directory creation."""
+    try:
+        # Ensure the local directory for the file exists.
+        os.makedirs(os.path.dirname(local_path), exist_ok=True)
+        s3_client.download_file(bucket, s3_key, local_path)
+        return s3_key
+    except Exception as e:
+        print(f"Failed to download {s3_key}: {e}")
+        return None
+
+def download_scene_data(scene_name: str, num_workers: int):
     """
-    Downloads all objects from a specified S3 prefix (folder) to a local directory,
-    retaining the folder structure.
+    Downloads all specified data for a given scene from S3.
 
     Args:
-        bucket_name (str): The name of the S3 bucket.
-        s3_prefix (str): The S3 prefix (folder path) to download from.
-        local_dir (str): The local directory to save the files to.
+        scene_name (str): The name of the scene to download (e.g., "berlin").
+        num_workers (int): The number of concurrent threads for downloading.
     """
     s3_client = boto3.client('s3')
     paginator = s3_client.get_paginator('list_objects_v2')
 
-    print(f"Starting download from s3://{bucket_name}/{s3_prefix} to {local_dir}")
+    print(f"🚀 Starting download for scene: '{scene_name}'")
+    print(f"Target directory: {os.path.join(LOCAL_BASE_DIRECTORY, scene_name)}")
+    print("-" * 50)
 
-    try:
-        # Use a paginator to handle potentially large number of objects
-        pages = paginator.paginate(Bucket=bucket_name, Prefix=s3_prefix)
+    for item in ITEMS_TO_DOWNLOAD:
+        s3_prefix = f"{scene_name}/{item}"
+        print(f"\nProcessing: s3://{BUCKET_NAME}/{s3_prefix}")
 
-        for page in pages:
-            if "Contents" in page:
+        try:
+            # Step 1: List all objects for the current prefix
+            download_tasks = []
+            pages = paginator.paginate(Bucket=BUCKET_NAME, Prefix=s3_prefix)
+            
+            for page in pages:
+                if "Contents" not in page:
+                    continue
                 for obj in page['Contents']:
                     s3_key = obj['Key']
-                    # Calculate the relative path within the S3 prefix
-                    # e.g., if s3_key is "folder/subfolder/file.txt" and s3_prefix is "folder/",
-                    # relative_path will be "subfolder/file.txt"
-                    relative_path = os.path.relpath(s3_key, s3_prefix)
                     
-                    # Construct the full local path for the file
-                    local_file_path = os.path.join(local_dir, relative_path)
+                    # Skip if it's a folder marker (ends with /)
+                    if s3_key.endswith('/'):
+                        continue
+                    
+                    # Construct the full local path, mirroring S3 structure
+                    local_file_path = os.path.join(LOCAL_BASE_DIRECTORY, s3_key)
+                    download_tasks.append({'s3_key': s3_key, 'local_path': local_file_path})
 
-                    # Ensure the local directory exists before downloading
-                    os.makedirs(os.path.dirname(local_file_path), exist_ok=True)
+            if not download_tasks:
+                print(f"⚠️ No files found for prefix '{s3_prefix}'. Skipping.")
+                continue
 
-                    print(f"Downloading s3://{bucket_name}/{s3_key} to {local_file_path}")
-                    s3_client.download_file(bucket_name, s3_key, local_file_path)
+            print(f"Found {len(download_tasks)} file(s) to download.")
+
+            # Step 2: Download files concurrently with a progress bar
+            with ThreadPoolExecutor(max_workers=num_workers) as executor:
+                # Create a future for each download task
+                futures = [
+                    executor.submit(_download_file, s3_client, BUCKET_NAME, task['s3_key'], task['local_path'])
+                    for task in download_tasks
+                ]
+
+                # Use tqdm to show a progress bar as futures complete
+                failed_count = 0
+                for future in tqdm(as_completed(futures), total=len(download_tasks), desc="Downloading", unit="file"):
+                    result = future.result()
+                    if result is None:
+                        failed_count += 1
+                
+                if failed_count > 0:
+                    print(f"⚠️ {failed_count} file(s) failed to download for '{s3_prefix}'.")
+                else:
+                    print(f"✅ Download complete for '{s3_prefix}'.")
+
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code")
+            if error_code == 'AccessDenied':
+                print(f"❌ Error: Access denied to bucket '{BUCKET_NAME}'. Check your AWS credentials.")
             else:
-                print(f"No contents found in s3://{bucket_name}/{s3_prefix}")
-        print("Download complete!")
+                print(f"❌ An AWS client error occurred: {e}")
+            break  # Stop on critical errors
+        except Exception as e:
+            print(f"❌ An unexpected error occurred: {e}")
+            break
 
-    except ClientError as e:
-        error_code = e.response.get("Error", {}).get("Code")
-        if error_code == 'NoSuchKey' or error_code == '404':
-            print(f"Error: S3 prefix '{s3_prefix}' not found in bucket '{bucket_name}'.")
-        elif error_code == 'AccessDenied':
-            print(f"Error: Access denied to bucket '{bucket_name}' or prefix '{s3_prefix}'. Check your AWS credentials and permissions.")
-        else:
-            print(f"An AWS client error occurred: {e}")
-    except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+    print("-" * 50)
+    print("🎉 All downloads finished!")
 
-# --- Main execution block ---
+# --- Main Execution Block ---
 if __name__ == "__main__":
-    download_s3_folder(BUCKET_NAME, S3_PREFIX, LOCAL_DOWNLOAD_DIRECTORY)
+    # Setup command-line argument parsing
+    parser = argparse.ArgumentParser(
+        description=f"Download scene data from the S3 bucket '{BUCKET_NAME}'."
+    )
+    parser.add_argument(
+        "scene_name",
+        type=str,
+        help="The name of the scene to download (e.g., 'berlin')."
+    )
+    parser.add_argument(
+        "-w", "--workers",
+        type=int,
+        default=DEFAULT_WORKERS,
+        help=f"Number of parallel download workers (default: {DEFAULT_WORKERS})."
+    )
+    args = parser.parse_args()
+
+    # Before running, make sure you have the necessary libraries
+    try:
+        from tqdm import tqdm as _
+    except ImportError:
+        print("Required package 'tqdm' not found. Please install it using: pip install tqdm")
+        exit(1)
+
+    download_scene_data(scene_name=args.scene_name, num_workers=args.workers)
