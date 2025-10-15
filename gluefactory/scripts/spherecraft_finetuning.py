@@ -266,9 +266,9 @@ def generate_finetuning_pairs(config: Dict):
         # Save the final npz file in a LightGlue-compatible format
         # image_size for spherical data is constant: 2*pi radians for width (theta), pi for height (phi)
         spherical_image_size = torch.tensor([2 * np.pi, np.pi]) 
-
+        temp_path = output_path.with_suffix('.npz.tmp')
         np.savez(
-            output_path,
+            temp_path,
             keypoints0=features1['keypoints'],
             descriptors0=features1['descriptors'],
             scores0=features1['scores'],
@@ -283,6 +283,8 @@ def generate_finetuning_pairs(config: Dict):
             gt_matches0=torch.from_numpy(gt_data['gt_matches0']).long(),
             gt_matches1=torch.from_numpy(gt_data['gt_matches1']).long(),
         )
+        temp_path.rename(output_path)
+        
         return f"Saved pair {output_filename}"
 
         # except Exception as e:
@@ -302,7 +304,7 @@ def generate_finetuning_pairs(config: Dict):
 
 def main():
     # --- Configuration for your 'barbershop' dataset ---
-    DATASET_NAME = "middleEast"
+    DATASET_NAME = "berlin"
     BASE_PATH = Path(f"/data/code/glue-factory/datasets/spherecraft_data/{DATASET_NAME}")
     OUTPUT_PATH = Path("/data/code/glue-factory/data/finetuning/finetuning_pairs_spherecraft")
     
@@ -329,18 +331,18 @@ def main():
 
     # 1. Feature Extraction (can be skipped if already done)
     # Set to True to skip this step
-    SKIP_FEATURE_EXTRACTION = False
+    SKIP_FEATURE_EXTRACTION = True
     if not SKIP_FEATURE_EXTRACTION:
         run_feature_extraction(CONFIG['image_dir'], CONFIG['feature_dir'], CONFIG['num_keypoints'])
     else:
         logging.info("Skipping feature extraction as requested.")
         
         
-    # # 2. Pair Generation
-    # generate_finetuning_pairs(CONFIG)
+    # 2. Pair Generation
+    generate_finetuning_pairs(CONFIG)
     
-    # logging.info("--- Pipeline Finished ---")
-    # logging.info(f"Output saved to: {CONFIG['output_dir']}")
+    logging.info("--- Pipeline Finished ---")
+    logging.info(f"Output saved to: {CONFIG['output_dir']}")
 
 if __name__ == "__main__":
     main()

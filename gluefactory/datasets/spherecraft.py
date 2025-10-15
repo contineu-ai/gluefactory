@@ -16,8 +16,8 @@ class SphereCraftDataset(BaseDataset):
         "prefetch_factor": 2,
 
         # --- Paths ---
-        "data_dir": "/data/code/glue-factory/datasets/spherecraft_data/barbershop", # Root for all SphereCraft scenes, relative to DATA_PATH
-        "pair_subdir": "finetune_pairs_xfeat_spherical",
+        "data_dir": "/data/code/glue-factory/data/finetuning", # Root for all SphereCraft scenes, relative to DATA_PATH
+        "pair_subdir": "finetuning_pairs_spherecraft",
         "keypoints_detector": "xfeat", # e.g., 'superpoint', 'sift'
     }
 
@@ -85,7 +85,12 @@ class _PairDatasetSphereCraft(Dataset): # Standard PyTorch Dataset
         # Keypoint-related data (float32 for model input)
         keypoints0 = torch.from_numpy(data['keypoints0']).float()
         descriptors0 = torch.from_numpy(data['descriptors0']).float()
-        scores0 = torch.from_numpy(data['scores0']).float()
+        try:
+            scores0 = torch.from_numpy(data['scores0']).float()
+        except Exception as e:
+            print(f"Error {e} occurred in the pair {pair_name}.", flush=True)
+            raise
+
         
         keypoints1 = torch.from_numpy(data['keypoints1']).float()
         descriptors1 = torch.from_numpy(data['descriptors1']).float()
@@ -100,19 +105,19 @@ class _PairDatasetSphereCraft(Dataset): # Standard PyTorch Dataset
         # image_size0 = torch.from_numpy(data['image_size0'])
         # image_size1 = torch.from_numpy(data['image_size1'])
         # name = str(data['name']) # Ensure name is a plain string
-        print(pair_name)
-        name = pair_name.split('.')[0]
+        # print(pair_name)
+        # name = pair_name.split('.')[0]
         
-        image0 = load_image(f"/data/code/glue-factory/datasets/spherecraft_data/barbershop/images/{name.split('_')[0]}.jpg")
-        image1 = load_image(f"/data/code/glue-factory/datasets/spherecraft_data/barbershop/images/{name.split('_')[1]}.jpg")
+        # image0 = load_image(f"/data/code/glue-factory/datasets/spherecraft_data/berlin/images/{name.split('_')[1]}.jpg")
+        # image1 = load_image(f"/data/code/glue-factory/datasets/spherecraft_data/berlin/images/{name.split('_')[2]}.jpg")
         return {
-            'image0': image0,
+            # 'image0': image0,
             'keypoints0': keypoints0,
             'descriptors0':descriptors0,
             'scores0': scores0,
             # 'image_size0': image_size0, # not needed for normalization since using spherical coordinates
 
-            'image1': image1,
+            # 'image1': image1,
             'keypoints1': keypoints1,
             'descriptors1': descriptors1,
             'scores1': scores1,
@@ -122,7 +127,7 @@ class _PairDatasetSphereCraft(Dataset): # Standard PyTorch Dataset
             'gt_matches0': gt_matches0,
             'gt_matches1': gt_matches1,
 
-            'name': name # Base image used for alterations
+            # 'name': name # Base image used for alterations
         }
 
     def __len__(self):

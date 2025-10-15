@@ -3,8 +3,8 @@
 # This configuration is for FINE-TUNING LightGlue on the SphereCraft dataset.
 
 train:
-  epochs: 50  # Fewer epochs are often needed for fine-tuning
-  lr: 0.00005 # Use a smaller learning rate for fine-tuning
+  epochs: 40  # Fewer epochs are often needed for fine-tuning
+  lr: 0.0005 # Use a smaller learning rate for fine-tuning
   optimizer: 'adamw'
   log_every_iter: 100
   eval_every_iter: 1000
@@ -44,7 +44,7 @@ data:
   
   # --- SphereCraft-specific parameters ---
   data_dir: 'finetuning'
-  pair_subdir: 'finetuning_pairs_1'
+  pair_subdir: 'finetuning_pairs_spherecraft'
   keypoints_detector: 'xfeat'
   
   # Batch sizes and workers
