@@ -18,7 +18,7 @@ FLASH_AVAILABLE = hasattr(F, "scaled_dot_product_attention")
 torch.backends.cudnn.deterministic = True
 
 
-@torch.cuda.amp.custom_fwd(cast_inputs=torch.float32)
+@torch.amp.custom_fwd(cast_inputs=torch.float32, device_type='cuda')
 def normalize_keypoints_spherical(
     kpts: torch.Tensor,
     # The 'size' parameter is no longer needed for spherical normalization,

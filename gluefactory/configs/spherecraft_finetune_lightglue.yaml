@@ -3,7 +3,7 @@
 # This configuration is for FINE-TUNING LightGlue on the SphereCraft dataset.
 
 train:
-  epochs: 40  # Fewer epochs are often needed for fine-tuning
+  epochs: 1  # Fewer epochs are often needed for fine-tuning
   lr: 0.0005 # Use a smaller learning rate for fine-tuning
   optimizer: 'adamw'
   log_every_iter: 100
@@ -48,5 +48,5 @@ data:
   keypoints_detector: 'xfeat'
   
   # Batch sizes and workers
-  train_batch_size: 16
-  num_workers: 4
+  train_batch_size: 1
+  num_workers: 1

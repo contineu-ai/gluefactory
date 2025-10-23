@@ -16,7 +16,7 @@ from pydoc import locate
 import numpy as np
 import torch
 from omegaconf import OmegaConf
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler, autocast
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from tqdm import tqdm
@@ -76,6 +76,83 @@ default_train_conf = {
     "submodules": [],
 }
 default_train_conf = OmegaConf.create(default_train_conf)
+
+
+def save_model_predictions(data, pred, losses, iteration, save_dir='debug_predictions'):
+    """
+    Save model predictions to disk for later visualization
+    """
+    save_dir = Path(save_dir)
+    save_dir.mkdir(exist_ok=True)
+    
+    # Save path
+    save_path = save_dir / f'iter_{iteration}.pt'
+    
+    # Prepare data to save
+    save_dict = {
+        # Input data
+        'keypoints0': data['keypoints0'].cpu(),
+        'keypoints1': data['keypoints1'].cpu(),
+        'descriptors0': data['descriptors0'].cpu(),
+        'descriptors1': data['descriptors1'].cpu(),
+        'scores0': data.get('scores0', None),
+        'scores1': data.get('scores1', None),
+        
+        # Model predictions
+        'matches0': pred.get('matches0', None),
+        'matches1': pred.get('matches1', None),
+        'matching_scores0': pred.get('matching_scores0', None),
+        'matching_scores1': pred.get('matching_scores1', None),
+        
+        # Losses
+        'losses': {k: v.cpu() if isinstance(v, torch.Tensor) else v 
+                   for k, v in losses.items()},
+        
+        # Ground truth if available
+        'gt_matches0': data.get('gt_matches0', None),
+        'gt_matches1': data.get('gt_matches1', None),
+        
+        # Image paths/names if available
+        'image0_path': data.get('image0', None),
+        'image1_path': data.get('image1', None),
+        'scene': data.get('scene', None),
+        'pair': data.get('pair', None),
+    }
+    
+    # Move tensors to CPU and remove None values
+    save_dict = {k: v.cpu() if isinstance(v, torch.Tensor) else v 
+                 for k, v in save_dict.items() if v is not None}
+    
+    torch.save(save_dict, save_path)
+    print(f"✓ Saved predictions to {save_path}")
+    
+    # Print summary
+    print("\n" + "="*60)
+    print(f"PREDICTION SUMMARY (Iteration {iteration})")
+    print("="*60)
+    
+    if 'matches0' in pred:
+        matches0 = pred['matches0'][0].cpu()  # First batch item
+        valid_matches = (matches0 > -1).sum().item()
+        total_kpts = matches0.shape[0]
+        print(f"Valid matches: {valid_matches}/{total_kpts} ({100*valid_matches/total_kpts:.1f}%)")
+    
+    if 'matching_scores0' in pred:
+        scores = pred['matching_scores0'][0].cpu()
+        valid_scores = scores[matches0 > -1]
+        if len(valid_scores) > 0:
+            print(f"Match scores: min={valid_scores.min():.4f}, "
+                  f"max={valid_scores.max():.4f}, "
+                  f"mean={valid_scores.mean():.4f}")
+    
+    print(f"\nTotal loss: {losses['total'].mean().item():.6f}")
+    for k, v in losses.items():
+        if k != 'total' and isinstance(v, torch.Tensor):
+            print(f"  {k}: {v.mean().item():.6f}")
+    
+    print("="*60 + "\n")
+    
+    return save_path
 
 
 @torch.no_grad()
@@ -356,7 +433,7 @@ def training(rank, conf, output_dir, args):
     optimizer = optimizer_fn(
         lr_params, lr=conf.train.lr, **conf.train.optimizer_options
     )
-    scaler = GradScaler(enabled=args.mixed_precision is not None)
+    scaler = GradScaler('cuda', enabled=args.mixed_precision is not None)
     logger.info(f"Training with mixed_precision={args.mixed_precision}")
 
     mp_dtype = {
@@ -457,11 +534,16 @@ def training(rank, conf, output_dir, args):
             model.train()
             optimizer.zero_grad()
 
-            with autocast(enabled=args.mixed_precision is not None, dtype=mp_dtype):
+            with autocast('cuda', enabled=args.mixed_precision is not None, dtype=mp_dtype):
                 data = batch_to_device(data, device, non_blocking=True)
                 pred = model(data)
                 losses, _ = loss_fn(pred, data)
                 loss = torch.mean(losses["total"])
+
+                # Save predictions for the first iteration (or specific iterations)
+                if it == 0:  # or it % 100 == 0
+                    save_path = save_model_predictions(data, pred, losses, it)
+                    
             if torch.isnan(loss).any():
                 print(f"Detected NAN, skipping iteration {it}")
                 del pred, data, loss, losses

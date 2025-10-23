@@ -11,15 +11,15 @@ import matplotlib.pyplot as plt
 GLUE_FACTORY_ROOT = Path(__file__).resolve().parent.parent # Example if script is in glue_factory_root/scripts/
 sys.path.insert(0, str(GLUE_FACTORY_ROOT))
 
-from gluefactory.utils.equirectangular_utils import equirectangular_to_dicemap
-from gluefactory.utils.xfeat_utils import generate_keypoints
+# from gluefactory.utils.equirectangular_utils import equirectangular_to_dicemap
+# from gluefactory.utils.xfeat_utils import generate_keypoints
 from gluefactory.utils.spherical_utils import standard_spherical_to_pixel, standard_pixel_to_spherical, spherical_to_cartesian
 from gluefactory.utils.spherecraft_utils import read_depth, get_c2w_and_w2c_matrix, warp_se3_spherical
 
 # Third-party libraries (ensure these are installed)
 import numpy as np
 import torch
-import cv2
+# import cv2
 from joblib import Parallel, delayed
 
 # Configure OpenCV to read EXR files
@@ -49,41 +49,41 @@ def read_pairs_from_txt(filepath: Path) -> List[Tuple[str, str]]:
     logging.info(f"Loaded {len(pairs)} pairs from {filepath.name}")
     return pairs
 
-def plot_img(image, kpts_spherical, color=(255, 0, 255), radius=1, thickness=5):
-    """
-    Draws keypoints on an image and displays it.
+# def plot_img(image, kpts_spherical, color=(255, 0, 255), radius=1, thickness=5):
+#     """
+#     Draws keypoints on an image and displays it.
 
-    Args:
-        image (np.ndarray): The input image in BGR format (as read by cv2).
-        kpts_spherical (np.ndarray): Keypoints in spherical coordinates (phi, theta).
-        color (tuple): BGR color for the keypoints.
-        radius (int): Radius of the circles representing keypoints.
-        thickness (int): Thickness of the circle outline.
-    """
-    h, w = image.shape[:2]
+#     Args:
+#         image (np.ndarray): The input image in BGR format (as read by cv2).
+#         kpts_spherical (np.ndarray): Keypoints in spherical coordinates (phi, theta).
+#         color (tuple): BGR color for the keypoints.
+#         radius (int): Radius of the circles representing keypoints.
+#         thickness (int): Thickness of the circle outline.
+#     """
+#     h, w = image.shape[:2]
 
-    # Convert spherical keypoints to pixel coordinates in the image
-    pixel_coords = standard_spherical_to_pixel(kpts_spherical, w, h)
+#     # Convert spherical keypoints to pixel coordinates in the image
+#     pixel_coords = standard_spherical_to_pixel(kpts_spherical, w, h)
 
-    # Create a copy of the image to avoid modifying the original
-    img_with_kpts = image.copy()
+#     # Create a copy of the image to avoid modifying the original
+#     img_with_kpts = image.copy()
 
-    # Draw each keypoint as a circle on the image
-    for point in pixel_coords:
-        # Get integer coordinates for drawing
-        x, y = int(round(point[0])), int(round(point[1]))
-        cv2.circle(img_with_kpts, (x, y), radius, color, thickness)
+#     # Draw each keypoint as a circle on the image
+#     for point in pixel_coords:
+#         # Get integer coordinates for drawing
+#         x, y = int(round(point[0])), int(round(point[1]))
+#         cv2.circle(img_with_kpts, (x, y), radius, color, thickness)
 
-    # --- Display the image using Matplotlib ---
-    # Convert the image from BGR (OpenCV's default) to RGB for correct color display
-    img_rgb = cv2.cvtColor(img_with_kpts, cv2.COLOR_BGR2RGB)
+#     # --- Display the image using Matplotlib ---
+#     # Convert the image from BGR (OpenCV's default) to RGB for correct color display
+#     img_rgb = cv2.cvtColor(img_with_kpts, cv2.COLOR_BGR2RGB)
 
-    # Create a plot to show the image
-    plt.figure(figsize=(16, 8))
-    plt.imshow(img_rgb)
-    plt.title("Image with Plotted Keypoints")
-    plt.axis('off')  # Hide the axes for a cleaner look
-    plt.show()
+#     # Create a plot to show the image
+#     plt.figure(figsize=(16, 8))
+#     plt.imshow(img_rgb)
+#     plt.title("Image with Plotted Keypoints")
+#     plt.axis('off')  # Hide the axes for a cleaner look
+#     plt.show()
 
 # ==============================================================================
 # CORE LOGIC
@@ -166,46 +166,46 @@ def generate_sfm_groundtruth(
 # PIPELINE STAGES
 # ==============================================================================
 
-def run_feature_extraction(image_dir: Path, feature_dir: Path, num_keypoints: int):
-    """
-    Stage 1: Extracts spherical XFeat keypoints for all images.
-    """
-    logging.info("--- Stage 1: Running Feature Extraction ---")
-    image_files = [p for p in image_dir.iterdir() if p.suffix.lower() in ['.png', '.jpg', '.jpeg']]
-    feature_dir.mkdir(exist_ok=True, parents=True)
+# def run_feature_extraction(image_dir: Path, feature_dir: Path, num_keypoints: int):
+#     """
+#     Stage 1: Extracts spherical XFeat keypoints for all images.
+#     """
+#     logging.info("--- Stage 1: Running Feature Extraction ---")
+#     image_files = [p for p in image_dir.iterdir() if p.suffix.lower() in ['.png', '.jpg', '.jpeg']]
+#     feature_dir.mkdir(exist_ok=True, parents=True)
     
-    def worker_extract(img_path: Path):
-        try:
-            output_path = feature_dir / f"{img_path.stem}.npz"
-            if output_path.exists():
-                return f"Skipped {img_path.name}, features already exist."
+#     def worker_extract(img_path: Path):
+#         try:
+#             output_path = feature_dir / f"{img_path.stem}.npz"
+#             if output_path.exists():
+#                 return f"Skipped {img_path.name}, features already exist."
 
-            image_equi = cv2.imread(str(img_path), cv2.IMREAD_COLOR)
-            if image_equi is None:
-                return f"Error loading {img_path.name}"
+#             image_equi = cv2.imread(str(img_path), cv2.IMREAD_COLOR)
+#             if image_equi is None:
+#                 return f"Error loading {img_path.name}"
 
-            # Project to dicemap for CNN-based feature extractor
-            image_dicemap = equirectangular_to_dicemap(image_equi)
+#             # Project to dicemap for CNN-based feature extractor
+#             image_dicemap = equirectangular_to_dicemap(image_equi)
 
-            # Generate keypoints (this util converts kpts from dicemap back to spherical)
-            kpts, descs, scores = generate_keypoints(image_dicemap, num_keypoints)
+#             # Generate keypoints (this util converts kpts from dicemap back to spherical)
+#             kpts, descs, scores = generate_keypoints(image_dicemap, num_keypoints)
             
-            np.savez_compressed(
-                output_path,
-                keypoints=kpts, # Shape (N, 2) in (phi, theta)
-                descriptors=descs,
-                scores=scores,
-            )
-            return f"Processed {img_path.name}"
-        except Exception as e:
-            return f"Failed {img_path.name}: {e}"
+#             np.savez_compressed(
+#                 output_path,
+#                 keypoints=kpts, # Shape (N, 2) in (phi, theta)
+#                 descriptors=descs,
+#                 scores=scores,
+#             )
+#             return f"Processed {img_path.name}"
+#         except Exception as e:
+#             return f"Failed {img_path.name}: {e}"
 
-    results = Parallel(n_jobs=8, verbose=1)(delayed(worker_extract)(p) for p in image_files)
-    for res in results:
-        if "Error" in res or "Failed" in res:
-            logging.warning(res)
-        else:
-            logging.info(res)
+#     results = Parallel(n_jobs=8, verbose=1)(delayed(worker_extract)(p) for p in image_files)
+#     for res in results:
+#         if "Error" in res or "Failed" in res:
+#             logging.warning(res)
+#         else:
+#             logging.info(res)
 
 
 def generate_finetuning_pairs(config: Dict):
@@ -266,7 +266,7 @@ def generate_finetuning_pairs(config: Dict):
         # Save the final npz file in a LightGlue-compatible format
         # image_size for spherical data is constant: 2*pi radians for width (theta), pi for height (phi)
         spherical_image_size = torch.tensor([2 * np.pi, np.pi]) 
-        temp_path = output_path.with_suffix('.npz.tmp')
+        temp_path = output_path.with_suffix('.tmp')
         np.savez(
             temp_path,
             keypoints0=features1['keypoints'],
@@ -283,7 +283,9 @@ def generate_finetuning_pairs(config: Dict):
             gt_matches0=torch.from_numpy(gt_data['gt_matches0']).long(),
             gt_matches1=torch.from_numpy(gt_data['gt_matches1']).long(),
         )
-        temp_path.rename(output_path)
+
+        new_temp = temp_path.with_suffix('.tmp.npz') # np.savez automatically adds .npz in the end
+        new_temp.rename(output_path)
         
         return f"Saved pair {output_filename}"
 
@@ -291,7 +293,7 @@ def generate_finetuning_pairs(config: Dict):
         #     return f"Failed to process pair {stem1}-{stem2}: {e}"
 
     logging.info(f"Starting to process {len(pairs_to_process)} pairs in parallel...")
-    results = Parallel(n_jobs=20, verbose=1)(delayed(worker_process_pair)(p[0], p[1]) for p in pairs_to_process)
+    results = Parallel(n_jobs=20, verbose=1)(delayed(worker_process_pair)(p[0], p[1]) for p in pairs_to_process[:1])
     for res in results:
         if "Warning" in res or "Failed" in res:
             logging.warning(res)
@@ -321,7 +323,7 @@ def main():
 
         # Parameters
         "num_keypoints": 2048,
-        "angle_threshold": 1, # Angular threshold in degrees for a match
+        "angle_threshold": 2, # Angular threshold in degrees for a match
 
         # Dataset Name
         "dataset_name": DATASET_NAME
