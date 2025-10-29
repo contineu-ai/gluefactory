@@ -283,7 +283,6 @@ def generate_finetuning_pairs(config: Dict):
             gt_matches0=torch.from_numpy(gt_data['gt_matches0']).long(),
             gt_matches1=torch.from_numpy(gt_data['gt_matches1']).long(),
         )
-
         new_temp = temp_path.with_suffix('.tmp.npz') # np.savez automatically adds .npz in the end
         new_temp.rename(output_path)
         
@@ -293,7 +292,7 @@ def generate_finetuning_pairs(config: Dict):
         #     return f"Failed to process pair {stem1}-{stem2}: {e}"
 
     logging.info(f"Starting to process {len(pairs_to_process)} pairs in parallel...")
-    results = Parallel(n_jobs=20, verbose=1)(delayed(worker_process_pair)(p[0], p[1]) for p in pairs_to_process[:1])
+    results = Parallel(n_jobs=28, verbose=1)(delayed(worker_process_pair)(p[0], p[1]) for p in pairs_to_process)
     for res in results:
         if "Warning" in res or "Failed" in res:
             logging.warning(res)
@@ -306,7 +305,7 @@ def generate_finetuning_pairs(config: Dict):
 
 def main():
     # --- Configuration for your 'barbershop' dataset ---
-    DATASET_NAME = "berlin"
+    DATASET_NAME = "barbershop"
     BASE_PATH = Path(f"/data/code/glue-factory/datasets/spherecraft_data/{DATASET_NAME}")
     OUTPUT_PATH = Path("/data/code/glue-factory/data/finetuning/finetuning_pairs_spherecraft")
     

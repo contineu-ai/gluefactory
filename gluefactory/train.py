@@ -23,6 +23,7 @@ from tqdm import tqdm
 
 from . import __module_name__, logger
 from .datasets import get_dataset
+from .curriculum_manager import CurriculumLearningManager
 from .eval import run_benchmark
 from .models import get_model
 from .settings import EVAL_PATH, TRAINING_PATH
@@ -369,6 +370,69 @@ def training(rank, conf, output_dir, args):
 
     dataset = get_dataset(data_conf.name)(data_conf)
 
+    # Initialize curriculum manager
+    curriculum_config = conf.train.get('curriculum_learning', {'enabled': False})
+    curriculum_manager = CurriculumLearningManager(
+        conf.train.curriculum_learning,
+        dataset
+    )
+
+    # Create a wrapper that maintains current_bins state
+    class DatasetWrapperWithCurriculum:
+        def __init__(self, dataset):
+            self.dataset = dataset
+            self.current_bins = None
+        
+        def set_bins(self, bins):
+            self.current_bins = bins
+        
+        def get_dataset(self, split, current_bins=None):
+            bins = current_bins if current_bins is not None else self.current_bins
+            return self.dataset.get_dataset(split, current_bins=bins)
+        
+        def get_data_loader(self, split, **kwargs):
+            """Override to use current bins."""
+            # Get dataset with current bins
+            dataset_instance = self.dataset.get_dataset(split, current_bins=self.current_bins)
+            
+            # Manually create dataloader with proper settings
+            from torch.utils.data import DataLoader
+            from .datasets.base_dataset import collate, worker_init_fn
+            
+            try:
+                batch_size = self.dataset.conf[split + "_batch_size"]
+            except:
+                batch_size = self.dataset.conf.batch_size
+            
+            num_workers = self.dataset.conf.get("num_workers", batch_size)
+            drop_last = True if split == "train" else False
+            shuffle = kwargs.get('shuffle', split == "train" and self.dataset.conf.shuffle_training)
+            distributed = kwargs.get('distributed', False)
+            
+            if distributed:
+                sampler = torch.utils.data.distributed.DistributedSampler(
+                    dataset_instance, drop_last=drop_last
+                )
+                shuffle = False
+            else:
+                sampler = None
+            
+            return DataLoader(
+                dataset_instance,
+                batch_size=batch_size,
+                shuffle=shuffle,
+                sampler=sampler,
+                pin_memory=kwargs.get('pinned', False),
+                collate_fn=collate,
+                num_workers=num_workers,
+                worker_init_fn=worker_init_fn,
+                prefetch_factor=self.dataset.conf.prefetch_factor,
+                drop_last=drop_last,
+            )
+    
+    # Wrap the dataset
+    dataset_wrapper = DatasetWrapperWithCurriculum(dataset)
+
     # Optionally load a different validation dataset than the training one
     val_data_conf = conf.get("data_val", None)
     if val_data_conf is None:
@@ -378,6 +442,11 @@ def training(rank, conf, output_dir, args):
 
     # @TODO: add test data loader
 
+    # Initialize curriculum at epoch 0
+    curriculum_manager.update_for_epoch(0)
+    current_bins =  curriculum_manager.get_current_bins()
+    dataset_wrapper.set_bins(current_bins)
+
     if args.overfit:
         # we train and eval with the same single training batch
         logger.info("Data in overfitting mode")
@@ -385,8 +454,10 @@ def training(rank, conf, output_dir, args):
         train_loader = dataset.get_overfit_loader("train")
         val_loader = val_dataset.get_overfit_loader("val")
     else:
-        train_loader = dataset.get_data_loader("train", distributed=args.distributed)
-        val_loader = val_dataset.get_data_loader("val")
+        # Create dataloaders
+        train_loader = dataset_wrapper.get_data_loader("train", distributed=args.distributed)
+        val_loader = dataset_wrapper.get_data_loader("val")
+
     if rank == 0:
         logger.info(f"Training loader has {len(train_loader)} batches")
         logger.info(f"Validation loader has {len(val_loader)} batches")
@@ -476,6 +547,34 @@ def training(rank, conf, output_dir, args):
     while epoch < conf.train.epochs and not stop:
         if rank == 0:
             logger.info(f"Starting epoch {epoch}")
+
+        phase_changed = curriculum_manager.update_for_epoch(epoch)
+
+        if phase_changed and not args.overfit:
+            current_bins = curriculum_manager.get_current_bins()
+
+            if rank == 0:
+                logger.info("="*80)
+                logger.info(f"CURRICULUM PHASE CHANGE at epoch {epoch}")
+                logger.info(f"Current bins: {current_bins}")
+                logger.info("="*80)
+
+            # Update wrapper's bins
+            dataset_wrapper.set_bins(current_bins)
+
+            # Recreate dataloaders
+            train_loader = dataset_wrapper.get_data_loader("train", distributed=args.distributed)
+            val_loader = dataset_wrapper.get_data_loader("val")
+
+            if rank == 0:
+                    train_ds = dataset_wrapper.get_dataset('train')
+                    val_ds = dataset_wrapper.get_dataset('val')
+                    logger.info(f"Dataloaders recreated: {len(train_ds)} train, {len(val_ds)} val samples")
+    
+            
+            # Update distributed sampler if needed
+            if args.distributed:
+                train_loader.sampler.set_epoch(epoch)
 
         # we first run the eval
         if (
