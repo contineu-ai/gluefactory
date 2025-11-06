@@ -22,12 +22,9 @@ except ImportError:
 
 # --- Utils ---
 from gluefactory.utils.covisibility_graph import NVMParser
-from gluefactory.settings import DATA_PATH # Assuming this is where datasets are stored
-from gluefactory.utils.image import ImagePreprocessor, load_image # Use Glue Factory's image utils
 from gluefactory.utils.equirectangular_utils import equirectangular_to_dicemap # Import equirectangular utils
 from gluefactory.utils.spherical_utils import standard_spherical_to_pixel, cartesian_to_spherical, spherical_to_cartesian # Import spherical utils
 from gluefactory.utils.xfeat_utils import generate_keypoints # Import xfeat utils
-from gluefactory.datasets.base_dataset import BaseDataset # Crucial import
 
 
 def parse_nvm_cameras(nvm_parser: NVMParser, model_index: int = 0) -> Dict[str, Dict[str, Any]]:
@@ -335,10 +332,10 @@ def generate_finetuning_pairs(config: Dict):
 
             # Save the final npz file in the LightGlue-compatible format
             # Keypoints are (phi, theta), image_size is for the equirectangular domain
-            equi_image_size = torch.tensor([2 * np.pi, np.pi]) 
-
+            equi_image_size = torch.tensor([2 * np.pi, np.pi])
+            temp_path = output_path.with_suffix('.tmp')
             np.savez(
-                output_path,
+                temp_path,
                 keypoints0=features_i['keypoints'],
                 descriptors0=features_i['descriptors'],
                 scores0=features_i['scores'],
@@ -353,8 +350,10 @@ def generate_finetuning_pairs(config: Dict):
                 gt_matches0=torch.from_numpy(gt_data['gt_matches0']).long(),
                 gt_matches1=torch.from_numpy(gt_data['gt_matches1']).long(),
             )
-            return f"Saved pair {output_filename} to {bin_name}."
+            new_temp = temp_path.with_suffix('.tmp.npz') # np.savez automatically adds .npz in the end
+            new_temp.rename(output_path)
 
+            return f"Saved pair {output_filename} to {bin_name}."
         except Exception as e:
             return f"Failed to process pair {pair_info}: {e}"
 
@@ -364,8 +363,8 @@ def generate_finetuning_pairs(config: Dict):
             for pair in pair_list:
                 all_tasks.append((pair, bin_name))
             
-    logging.info(f"Starting to process {len(all_tasks)} pairs in parallel...")
-    results = Parallel(n_jobs=4, verbose=10)(delayed(worker_process_pair)(task[0], task[1]) for task in all_tasks)
+    logging.info(f"Starting to process {len(all_tasks)} pairs (easy + medium) in parallel...")
+    results = Parallel(n_jobs=20, verbose=10)(delayed(worker_process_pair)(task[0], task[1]) for task in all_tasks)
     for res in results:
         if "Warning" in res or "Failed" in res:
             logging.warning(res)
@@ -399,7 +398,7 @@ def main():
         # Parameters
         "num_keypoints": 2048,
         "bin_quantiles": [0.66, 0.33], # Quantiles for easy/medium/hard split
-        "angle_threshold": 0.3, # Angular threshold in degrees for a match
+        "angle_threshold": 2, # Angular threshold in degrees for a match
     }
 
     # Create output directories
@@ -412,20 +411,26 @@ def main():
     # This part requires the Metashape library to be active.
     if Metashape:
         logging.info("--- Initial Asset Generation from Metashape ---")
-        doc = Metashape.Document()
-        doc.open(str(CONFIG['psz_path']))
-        chunk = doc.chunk
-        
+
         # Export cameras if NVM doesn't exist
         if not CONFIG['nvm_path'].exists():
             logging.info(f"Exporting cameras to {CONFIG['nvm_path']}...")
-            chunk.exportCameras(path=str(CONFIG['nvm_path']))
+            try:
+                chunk.exportCameras(path=str(CONFIG['nvm_path']))
+            except Exception as e:
+                logging.info("Can't export cameras.nvm, current system doesn't have Metashape License. ")
+                raise e
         else:
             logging.info("NVM file already exists, skipping export.")
             
         # Export depth maps
         logging.info("Generating and saving depth maps...")
         if len(os.listdir(CONFIG['depth_dir'])) != len(os.listdir(CONFIG['image_dir'])):
+            logging.info("---------- Loading Metashape Document ----------")
+            doc = Metashape.Document()
+            doc.open(str(CONFIG['psz_path']))
+            chunk = doc.chunk
+            logging.info("---------- Starting depth map generation ----------")
             for camera in chunk.cameras:
                 depth_path = CONFIG['depth_dir'] / f"{camera.label}.exr"
                 if not depth_path.exists():
@@ -457,3 +462,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+"""
+python3 gluefactory/scripts/generate_real_finetuning_data.py \
+    "/data/code/glue-factory/data/finetuning/67dbee940e56164c4d12d8e2/67e3c1eda54e4b0012d0f667" \
+    "/data/code/glue-factory/data/finetuning/finetuning_pairs_real" \
+    --skip_feature_extraction
+"""

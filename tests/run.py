@@ -3,31 +3,34 @@ import sys
 import os
 from itertools import product
 
-PATH1 = '/data/code/glue-factory/68bc279594638700124b9aa2'
-PATH2 = '/data/code/glue-factory/68d5463994638700124b9ad2'
+# PATH1 = '/data/code/glue-factory/68bc279594638700124b9aa2'
+# PATH2 = '/data/code/glue-factory/68d5463994638700124b9ad2'
 
-files1 = os.listdir(PATH1)  
-files2 = os.listdir(PATH2)
+# files1 = os.listdir(PATH1)  
+# files2 = os.listdir(PATH2)
 
-pairs = product(files1, files2, repeat=1)
+# pairs = product(files1, files2, repeat=1)
+
+PATH = '/data/code/glue-factory/test_video'
+files = os.listdir(PATH)
+
 
 def run_tests():
     """
     Run the test suite for the LightGlue model.
     """
 
-    for pair in pairs:
+    for i in range(len(files) - 1):
         try:
             # Run pytest on the test_my_lightglue.py file
             result = subprocess.run(
                 [sys.executable, 'tests/test_my_lightglue.py', 
                 '--checkpoint', 
-                '/data'
-                '/code/glue-factory/outputs/training/spherecraft_pretrain_lightglue_run3/checkpoint_best.tar',
+                '/data/code/outputs/training/spherecraft_finetune_lightglue_run2/checkpoint_best.tar',
                 '--image0', 
-                f'{PATH1}/{pair[0]}',
+                f'{PATH}/{files[i]}',
                 '--image1',
-                f'{PATH2}/{pair[1]}',
+                f'{PATH}/{files[i+1]}',
                 '--output', 
                 '/data/code/glue-factory/result_aa2_ad2'],
                 check=True,

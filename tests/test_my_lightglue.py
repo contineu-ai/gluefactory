@@ -53,7 +53,7 @@ def visualize_batch_item(image0, image1, kpts0, kpts1, matches, output_path, col
 
     print(f"Image 0 shape: {img0.shape}, Keypoints 0 shape: {kpts0.shape}")
     print(f"Image 1 shape: {img1.shape}, Keypoints 1 shape: {kpts1.shape}")
-    print(f"Number of valid GT matches: {len(gt_matches)}")
+    print(f"Number of matches: {len(gt_matches)}")
 
     # --- Get Matched Keypoints for Visualization ---
     kpts0_matched = kpts0[gt_matches[:, 0]]
@@ -207,3 +207,11 @@ if __name__ == "__main__":
         image1=args.image1,
         output=args.output
     )
+
+"""
+python3 tests/test_my_lightglue.py \
+    --checkpoint "/data/code/outputs/training/spherecraft_finetune_lightglue_run2/checkpoint_best.tar"\
+    --image0 "/data/code/glue-factory/test_video/frame_0520.png"\
+    --image1 "/data/code/glue-factory/test_video/frame_0521.png"\
+    --output "/data/code/glue-factory/result_aa2_ad2"
+"""

@@ -22,7 +22,9 @@ def cartesian_to_spherical(xyz_np):
     x, y, z = xyz_np[:, 0], xyz_np[:, 1], xyz_np[:, 2]
     
     phi = np.arctan2(x, z)
-    theta = np.arcsin(y)
+    # Clamp y to [-1, 1] to avoid numerical errors
+    y_clamped = np.clip(y, -1.0, 1.0)
+    theta = np.arcsin(y_clamped)
     return np.stack([phi, theta], axis=-1)
 
 def standard_spherical_to_pixel(kpts_sph_np, W, H):
